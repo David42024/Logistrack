@@ -8,12 +8,18 @@ import { DriversModule } from './drivers/drivers.module';
 import { CustomersModule } from './customers/customers.module';
 import { ReportsModule } from './reports/reports.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { FleetModule } from './fleet/fleet.module';
+import { RoutesModule } from './routes/routes.module';
 import { CommonModule } from './common/common.module';
 import { User } from './users/entities/user.entity';
 import { Order } from './orders/entities/order.entity';
 import { OrderHistory } from './orders/entities/order-history.entity';
 import { Driver } from './drivers/entities/driver.entity';
 import { Customer } from './customers/entities/customer.entity';
+import { Vehicle } from './fleet/entities/vehicle.entity';
+import { Maintenance } from './fleet/entities/maintenance.entity';
+import { Route } from './routes/entities/route.entity';
+import { RouteStop } from './routes/entities/route-stop.entity';
 
 @Module({
   imports: [
@@ -27,7 +33,7 @@ import { Customer } from './customers/entities/customer.entity';
         username: configService.get('DB_USER', 'transport_user'),
         password: configService.get('DB_PASSWORD', 'transport_pass'),
         database: configService.get('DB_NAME', 'transport_db'),
-        entities: [User, Order, OrderHistory, Driver, Customer],
+        entities: [User, Order, OrderHistory, Driver, Customer, Vehicle, Maintenance, Route, RouteStop],
         synchronize: true,
         autoLoadEntities: true,
         logging: configService.get('NODE_ENV') === 'development',
@@ -42,6 +48,8 @@ import { Customer } from './customers/entities/customer.entity';
     CustomersModule,
     ReportsModule,
     MetricsModule,
+    FleetModule,
+    RoutesModule,
   ],
 })
 export class AppModule {}

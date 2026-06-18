@@ -177,6 +177,8 @@ El sistema se distribuye entre los integrantes según el alcance establecido en 
 - ✅ **CustomersModule:** CRUD de clientes, historial de pedidos por cliente
 - ✅ **ReportsModule:** KPIs básicos, exportación PDF/Excel, analytics avanzados
 - ✅ **MetricsModule:** Métricas públicas, datos históricos
+- ✅ **FleetModule:** Gestión de vehículos, mantenimiento, métricas de flota
+- ✅ **RoutesModule:** Planificación de rutas, optimización, seguimiento de paradas
 
 ### Frontend (React)
 - ✅ **Páginas implementadas:**
