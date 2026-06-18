@@ -179,4 +179,29 @@ export class ReportsService {
     await workbook.xlsx.write(res);
     res.end();
   }
+
+  async getAnalytics() {
+    const kpis = await this.getKPIs();
+    const deliveriesByDay = await this.getDeliveriesByDay(30);
+    const topDrivers = await this.getTopDrivers();
+
+    const zoneDistribution = await this.ordersRepository
+      .createQueryBuilder('o')
+      .select('o.destination', 'zone')
+      .addSelect('COUNT(o.id)', 'count')
+      .where('o.status = :s', { s: OrderStatus.DELIVERED })
+      .groupBy('o.destination')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    return {
+      kpis,
+      deliveriesByDay,
+      topDrivers,
+      zoneDistribution: zoneDistribution.map(z => ({
+        zone: z.zone,
+        count: parseInt(z.count),
+      })),
+    };
+  }
 }

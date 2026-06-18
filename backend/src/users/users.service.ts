@@ -30,6 +30,37 @@ export class UsersService {
     return this.findOne(id);
   }
 
+  async updateStatus(id: string, isActive: boolean) {
+    await this.usersRepository.update(id, { isActive });
+    return this.findOne(id);
+  }
+
+  async getActivity(id: string) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      select: ['id', 'email', 'name', 'createdAt', 'updatedAt'],
+    });
+    if (!user) throw new NotFoundException('User not found');
+    
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+      activity: [
+        {
+          action: 'Cuenta creada',
+          timestamp: user.createdAt,
+        },
+        {
+          action: 'Última actualización',
+          timestamp: user.updatedAt,
+        },
+      ],
+    };
+  }
+
   async remove(id: string) {
     await this.usersRepository.update(id, { isActive: false });
     return { message: 'User deactivated' };

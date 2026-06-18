@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import {
   LayoutDashboard,
   Package,
@@ -88,6 +89,7 @@ const allNavItems: NavItem[] = [
 
 const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
@@ -105,9 +107,9 @@ const Sidebar: React.FC = () => {
   );
 
   return (
-    <aside className="flex flex-col w-64 min-h-screen bg-gray-900 flex-shrink-0">
+    <aside className="flex flex-col w-64 min-h-screen bg-gray-900 dark:bg-gray-950 flex-shrink-0">
       {/* Logo */}
-      <div className="px-5 py-6 border-b border-gray-800">
+      <div className="px-5 py-6 border-b border-gray-800 dark:border-gray-900">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
             <Truck size={16} className="text-white" />

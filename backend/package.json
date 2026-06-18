@@ -9,7 +9,10 @@
     "build": "nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
-    "start:prod": "node dist/main"
+    "start:prod": "node dist/main",
+    "db:seed": "psql -U transport_user -d transport_db -f scripts/seed.sql",
+    "db:init": "psql -U transport_user -d transport_db -f scripts/init-db.sql",
+    "db:reset": "psql -U transport_user -d transport_db -f scripts/init-db.sql && psql -U transport_user -d transport_db -f scripts/seed.sql"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

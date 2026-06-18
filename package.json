@@ -4,7 +4,11 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "concurrently \"npm --prefix backend run start:dev\" \"npm --prefix frontend run dev\"",
-    "install:all": "npm --prefix backend install && npm --prefix frontend install"
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "db:seed": "set PGPASSWORD=12345&& set PGCLIENTENCODING=UTF8&& psql -U postgres -d transport_db -f scripts/seed.sql",
+    "db:init": "set PGPASSWORD=12345&& set PGCLIENTENCODING=UTF8&& psql -U postgres -d transport_db -f scripts/init-db.sql",
+    "db:reset": "set PGPASSWORD=12345&& set PGCLIENTENCODING=UTF8&& psql -U postgres -d transport_db -c \"DROP SCHEMA public CASCADE; CREATE SCHEMA public;\" && psql -U postgres -d transport_db -f scripts/init-db.sql",
+    "db:drop": "set PGPASSWORD=12345&& set PGCLIENTENCODING=UTF8&& psql -U postgres -d transport_db -c \"DROP SCHEMA public CASCADE; CREATE SCHEMA public;\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

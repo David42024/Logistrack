@@ -1,0 +1,100 @@
+{
+  "roles": [
+    {
+      "name": "admin",
+      "label": "Administrador",
+      "description": "Acceso completo al sistema",
+      "permissions": [
+        "users.create",
+        "users.read",
+        "users.update",
+        "users.delete",
+        "users.activate",
+        "orders.create",
+        "orders.read",
+        "orders.update",
+        "orders.delete",
+        "orders.assign",
+        "drivers.create",
+        "drivers.read",
+        "drivers.update",
+        "drivers.delete",
+        "customers.create",
+        "customers.read",
+        "customers.update",
+        "customers.delete",
+        "reports.read",
+        "reports.export",
+        "reports.analytics",
+        "metrics.read",
+        "metrics.public"
+      ]
+    },
+    {
+      "name": "coordinator",
+      "label": "Coordinador",
+      "description": "Gestión de pedidos y asignación de transportistas",
+      "permissions": [
+        "orders.create",
+        "orders.read",
+        "orders.update",
+        "orders.assign",
+        "drivers.read",
+        "drivers.update",
+        "customers.create",
+        "customers.read",
+        "customers.update",
+        "reports.read",
+        "reports.export",
+        "reports.analytics",
+        "metrics.read"
+      ]
+    },
+    {
+      "name": "operator",
+      "label": "Operador",
+      "description": "Gestión básica de pedidos",
+      "permissions": [
+        "orders.create",
+        "orders.read",
+        "orders.update",
+        "drivers.read",
+        "customers.read"
+      ]
+    },
+    {
+      "name": "driver",
+      "label": "Transportista",
+      "description": "Gestión de pedidos asignados",
+      "permissions": [
+        "orders.read",
+        "orders.update",
+        "orders.track",
+        "incidents.create"
+      ]
+    },
+    {
+      "name": "customer",
+      "label": "Cliente",
+      "description": "Rastreo de pedidos propios",
+      "permissions": [
+        "orders.track"
+      ]
+    },
+    {
+      "name": "manager",
+      "label": "Gerente",
+      "description": "Supervisión y reportes",
+      "permissions": [
+        "orders.read",
+        "orders.update",
+        "drivers.read",
+        "customers.read",
+        "reports.read",
+        "reports.export",
+        "reports.analytics",
+        "metrics.read"
+      ]
+    }
+  ]
+}

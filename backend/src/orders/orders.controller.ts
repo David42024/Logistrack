@@ -96,4 +96,20 @@ export class OrdersController {
   getDriverOrders(@Param('driverId') driverId: string) {
     return this.ordersService.getDriverOrders(driverId);
   }
+
+  @Post(':id/incidents')
+  @Roles(Role.ADMIN, Role.COORDINATOR, Role.DRIVER)
+  async addIncident(
+    @Param('id') id: string,
+    @Body() body: { note: string; attachment?: string },
+    @Request() req,
+  ) {
+    return this.ordersService.addIncident(id, body.note, body.attachment, req.user.id);
+  }
+
+  @Get('incidents/active')
+  @Roles(Role.ADMIN, Role.COORDINATOR)
+  getActiveIncidents() {
+    return this.ordersService.getActiveIncidents();
+  }
 }

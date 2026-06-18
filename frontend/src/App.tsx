@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 import LoginPage from './pages/LoginPage';
@@ -17,65 +18,67 @@ import TrackOrderPage from './pages/TrackOrderPage';
 import ReportsPage from './pages/ReportsPage';
 
 const App: React.FC = () => (
-  <AuthProvider>
-    <SocketProvider>
-      <BrowserRouter>
-        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/track" element={<TrackOrderPage />} />
+  <ThemeProvider>
+    <AuthProvider>
+      <SocketProvider>
+        <BrowserRouter>
+          <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/track" element={<TrackOrderPage />} />
 
-          {/* Admin & Coordinator */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute roles={['admin', 'coordinator']}>
-              <DashboardPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/orders" element={
-            <ProtectedRoute roles={['admin', 'coordinator', 'driver']}>
-              <OrdersPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/orders/create" element={
-            <ProtectedRoute roles={['admin', 'coordinator']}>
-              <CreateOrderPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/orders/:id" element={
-            <ProtectedRoute roles={['admin', 'coordinator', 'driver']}>
-              <OrderDetailPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/assignments" element={
-            <ProtectedRoute roles={['admin', 'coordinator']}>
-              <AssignmentsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/drivers" element={
-            <ProtectedRoute roles={['admin', 'coordinator']}>
-              <DriversPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/reports" element={
-            <ProtectedRoute roles={['admin', 'coordinator']}>
-              <ReportsPage />
-            </ProtectedRoute>
-          } />
+            {/* Admin & Coordinator */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute roles={['admin', 'coordinator']}>
+                <DashboardPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/orders" element={
+              <ProtectedRoute roles={['admin', 'coordinator', 'driver']}>
+                <OrdersPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/orders/create" element={
+              <ProtectedRoute roles={['admin', 'coordinator']}>
+                <CreateOrderPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/orders/:id" element={
+              <ProtectedRoute roles={['admin', 'coordinator', 'driver']}>
+                <OrderDetailPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/assignments" element={
+              <ProtectedRoute roles={['admin', 'coordinator']}>
+                <AssignmentsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/drivers" element={
+              <ProtectedRoute roles={['admin', 'coordinator']}>
+                <DriversPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/reports" element={
+              <ProtectedRoute roles={['admin', 'coordinator']}>
+                <ReportsPage />
+              </ProtectedRoute>
+            } />
 
-          {/* Driver */}
-          <Route path="/driver-dashboard" element={
-            <ProtectedRoute roles={['driver']}>
-              <DriverDashboardPage />
-            </ProtectedRoute>
-          } />
+            {/* Driver */}
+            <Route path="/driver-dashboard" element={
+              <ProtectedRoute roles={['driver']}>
+                <DriverDashboardPage />
+              </ProtectedRoute>
+            } />
 
-          {/* Default redirects */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </SocketProvider>
-  </AuthProvider>
+            {/* Default redirects */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </SocketProvider>
+    </AuthProvider>
+  </ThemeProvider>
 );
 
 export default App;

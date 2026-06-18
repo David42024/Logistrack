@@ -7,6 +7,8 @@ import { OrdersModule } from './orders/orders.module';
 import { DriversModule } from './drivers/drivers.module';
 import { CustomersModule } from './customers/customers.module';
 import { ReportsModule } from './reports/reports.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { CommonModule } from './common/common.module';
 import { User } from './users/entities/user.entity';
 import { Order } from './orders/entities/order.entity';
 import { OrderHistory } from './orders/entities/order-history.entity';
@@ -27,16 +29,19 @@ import { Customer } from './customers/entities/customer.entity';
         database: configService.get('DB_NAME', 'transport_db'),
         entities: [User, Order, OrderHistory, Driver, Customer],
         synchronize: true,
+        autoLoadEntities: true,
         logging: configService.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
     }),
+    CommonModule,
     AuthModule,
     UsersModule,
     OrdersModule,
     DriversModule,
     CustomersModule,
     ReportsModule,
+    MetricsModule,
   ],
 })
 export class AppModule {}

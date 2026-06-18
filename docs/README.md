@@ -41,8 +41,12 @@ Espera ~60 segundos para que todo inicie.
 |-----|-------|------------|
 | Admin | admin@transporte.com | Admin123! |
 | Coordinador | coord@transporte.com | Coord123! |
+| Operador | operator@transporte.com | Operator123! |
+| Gerente | manager@transporte.com | Manager123! |
 | Transportista | driver1@transporte.com | Driver123! |
 | Transportista | driver2@transporte.com | Driver123! |
+| Transportista | driver3@transporte.com | Driver123! |
+| Cliente | customer@transporte.com | Customer123! |
 
 ## Flujo de Trabajo
 

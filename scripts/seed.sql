@@ -35,6 +35,34 @@ BEGIN
     );
   END IF;
 
+  IF NOT EXISTS (SELECT 1 FROM users WHERE email = 'operator@transporte.com') THEN
+    INSERT INTO users (id, email, password, name, role, "isActive", "createdAt", "updatedAt")
+    VALUES (
+      uuid_generate_v4(),
+      'operator@transporte.com',
+      '$2a$10$Va6dDJVKFfP4HYnBvqsA.eUmlH6XIA8oAljRX2IkzQPzIM83Pnf5e', -- Operator123!
+      'Operador Logístico',
+      'operator',
+      true,
+      NOW(),
+      NOW()
+    );
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM users WHERE email = 'manager@transporte.com') THEN
+    INSERT INTO users (id, email, password, name, role, "isActive", "createdAt", "updatedAt")
+    VALUES (
+      uuid_generate_v4(),
+      'manager@transporte.com',
+      '$2a$10$Va6dDJVKFfP4HYnBvqsA.eUmlH6XIA8oAljRX2IkzQPzIM83Pnf5e', -- Manager123!
+      'Gerente de Operaciones',
+      'manager',
+      true,
+      NOW(),
+      NOW()
+    );
+  END IF;
+
   IF NOT EXISTS (SELECT 1 FROM users WHERE email = 'driver1@transporte.com') THEN
     INSERT INTO users (id, email, password, name, role, "isActive", "createdAt", "updatedAt")
     VALUES (

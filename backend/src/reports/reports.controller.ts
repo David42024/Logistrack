@@ -43,4 +43,10 @@ export class ReportsController {
   async exportExcel(@Res() res: Response) {
     return this.reportsService.generateExcelReport(res);
   }
+
+  @Get('analytics')
+  @Roles(Role.ADMIN, Role.COORDINATOR)
+  getAnalytics() {
+    return this.reportsService.getAnalytics();
+  }
 }

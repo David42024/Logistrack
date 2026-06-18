@@ -31,6 +31,18 @@ export class UsersController {
     return this.usersService.update(id, body);
   }
 
+  @Patch(':id/status')
+  @Roles(Role.ADMIN)
+  updateStatus(@Param('id') id: string, @Body() body: { isActive: boolean }) {
+    return this.usersService.updateStatus(id, body.isActive);
+  }
+
+  @Get(':id/activity')
+  @Roles(Role.ADMIN)
+  getActivity(@Param('id') id: string) {
+    return this.usersService.getActivity(id);
+  }
+
   @Delete(':id')
   @Roles(Role.ADMIN)
   remove(@Param('id') id: string) {

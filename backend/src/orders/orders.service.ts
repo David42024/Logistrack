@@ -174,4 +174,54 @@ export class OrdersService {
 
     return { totalToday, deliveredToday, inTransit, incidents };
   }
+
+  async addInciment(orderId: string, note: string, attachment?: string, userId?: string) {
+    const order = await this.findOne(orderId);
+    
+    await this.historyRepository.save({
+      orderId: order.id,
+      previousStatus: order.status,
+      newStatus: order.status,
+      changedBy: userId,
+      notes: note,
+      incidentImage: attachment,
+    });
+
+    return this.findOne(orderId);
+  }
+
+  async addIncident(orderId: string, note: string, attachment?: string, userId?: string) {
+    const order = await this.findOne(orderId);
+    
+    await this.historyRepository.save({
+      orderId: order.id,
+      previousStatus: order.status,
+      newStatus: order.status,
+      changedBy: userId,
+      notes: note,
+      incidentImage: attachment,
+    });
+
+    return this.findOne(orderId);
+  }
+
+  async getActiveIncidents() {
+    const incidents = await this.historyRepository
+      .createQueryBuilder('h')
+      .where('h.incidentImage IS NOT NULL')
+      .orderBy('h.createdAt', 'DESC')
+      .limit(50)
+      .getMany();
+
+    const orderIds = [...new Set(incidents.map(i => i.orderId))];
+    const orders = await this.ordersRepository.find({
+      where: { id: { $in: orderIds } } as any,
+      relations: ['customer', 'driver']
+    });
+
+    return incidents.map(incident => ({
+      ...incident,
+      order: orders.find(o => o.id === incident.orderId),
+    }));
+  }
 }

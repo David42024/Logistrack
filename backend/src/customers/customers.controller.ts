@@ -36,4 +36,10 @@ export class CustomersController {
   update(@Param('id') id: string, @Body() body: any) {
     return this.customersService.update(id, body);
   }
+
+  @Get(':id/orders')
+  @Roles(Role.ADMIN, Role.COORDINATOR)
+  getCustomerOrders(@Param('id') id: string) {
+    return this.customersService.getCustomerOrders(id);
+  }
 }
