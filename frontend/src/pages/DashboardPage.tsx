@@ -1,177 +1,189 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import MainLayout from '../components/layout/MainLayout';
-import { LoadingSpinner } from '../components/common/StatsCard';
-import { DashboardKpiCards, KpiData } from '../components/dashboard/DashboardKpiCards';
-import { DeliveryAreaChart } from '../components/dashboard/DeliveryAreaChart';
-import RecentOrdersTable from '../components/dashboard/RecentOrdersTable';
-import IncidentsPanel from '../components/dashboard/IncidentsPanel';
-import { reportsApi } from '../api/reports.api';
-import { ordersApi } from '../api/orders.api';
+import { KPICard } from '../components/dashboard/KPICard';
+import { AlertCenter } from '../components/dashboard/AlertCenter';
+import { OrdersTable } from '../components/dashboard/OrdersTable';
+import { AnalyticsChart } from '../components/dashboard/AnalyticsChart';
+import { SystemHealthIndicator } from '../components/dashboard/SystemHealthIndicator';
+import { DashboardModeToggle } from '../components/dashboard/DashboardModeToggle';
+import { DashboardMode, MetricType } from '../types/dashboard.types';
 import { useSocket } from '../contexts/SocketContext';
-import toast from 'react-hot-toast';
-import { Order, OrderHistory } from '../types/order.types';
+import {
+  useOperationalKPIs,
+  usePerformanceKPIs,
+  useIncidents,
+  useOrders,
+  useSystemHealth,
+  useChartData,
+} from '../hooks/useDashboardData';
 
-// ------------------------------------------------------------------
-// Helper: extract incidents from order history
-// ------------------------------------------------------------------
-interface DashboardIncident {
-  id: string;
-  description: string;
-  priority: 'alta' | 'media' | 'baja';
-  orderNumber?: string;
-}
-
-function extractIncidents(orders: Order[]): DashboardIncident[] {
-  const incidents: DashboardIncident[] = [];
-
-  for (const order of orders) {
-    if (!order.history) continue;
-    for (const entry of order.history) {
-      const hasIncident =
-        entry.incidentImage ||
-        (entry.notes && entry.notes.trim().length > 0 && entry.newStatus !== 'delivered');
-
-      if (hasIncident) {
-        const desc = entry.notes?.trim()
-          ? `Pedido ${order.orderNumber} - ${entry.notes.trim()}`
-          : `Pedido ${order.orderNumber} - Incidencia registrada`;
-
-        // Rough priority heuristic
-        const lowerDesc = desc.toLowerCase();
-        let priority: DashboardIncident['priority'] = 'media';
-        if (
-          lowerDesc.includes('cancelad') ||
-          lowerDesc.includes('accident') ||
-          lowerDesc.includes('urgente') ||
-          lowerDesc.includes('alta')
-        ) {
-          priority = 'alta';
-        } else if (
-          lowerDesc.includes('retraso') ||
-          lowerDesc.includes('dirección') ||
-          lowerDesc.includes('no encontrad')
-        ) {
-          priority = 'media';
-        } else {
-          priority = 'baja';
-        }
-
-        incidents.push({
-          id: entry.id,
-          description: desc,
-          priority,
-          orderNumber: order.orderNumber,
-        });
-      }
-    }
-  }
-
-  return incidents;
-}
-
-// ------------------------------------------------------------------
-// Main Dashboard Page
-// ------------------------------------------------------------------
 const DashboardPage: React.FC = () => {
-  const [kpis, setKpis] = useState<KpiData | null>(null);
-  const [deliveries, setDeliveries] = useState<{ date: string; count: number }[]>([]);
-  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
-  const [allOrders, setAllOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [deliveryDays, setDeliveryDays] = useState(30);
+  const [mode, setMode] = useState<DashboardMode>(DashboardMode.ANALYTICS);
+  const [selectedMetric, setSelectedMetric] = useState<MetricType>(MetricType.DELIVERIES);
   const { socket } = useSocket();
 
-  const fetchData = useCallback(async (days = deliveryDays) => {
-    try {
-      const [kpiRes, delRes, ordersRes, allOrdersRes] = await Promise.all([
-        reportsApi.getKPIs(),
-        reportsApi.getDeliveriesByDay(days),
-        ordersApi.getAll({ page: 1, limit: 5 }),
-        ordersApi.getAll({ page: 1, limit: 50 }),
-      ]);
+  // Data hooks
+  const operationalKPIs = useOperationalKPIs();
+  const performanceKPIs = usePerformanceKPIs();
+  const incidents = useIncidents();
+  const orders = useOrders();
+  const systemHealth = useSystemHealth();
+  const chartData = useChartData(selectedMetric);
 
-      const kpiData = kpiRes.data;
-
-      // Merge delivered count: use totalDelivered if available, fallback to deliveredToday
-      setKpis({
-        ...kpiData,
-        delivered: kpiData.totalDelivered ?? kpiData.deliveredToday ?? 0,
-      });
-
-      setDeliveries(delRes.data || []);
-      setRecentOrders(ordersRes.data?.data || []);
-      setAllOrders(allOrdersRes.data?.data || []);
-    } catch {
-      toast.error('Error al cargar el dashboard');
-    } finally {
-      setLoading(false);
-    }
-  }, [deliveryDays]);
-
-  useEffect(() => {
-    fetchData(deliveryDays);
-  }, []);
-
-  // Socket real-time updates
+  // WebSocket real-time updates
   useEffect(() => {
     if (!socket) return;
-    const refresh = () => fetchData(deliveryDays);
-    socket.on('order-status-updated', refresh);
-    socket.on('order-created', refresh);
-    return () => {
-      socket.off('order-status-updated', refresh);
-      socket.off('order-created', refresh);
-    };
-  }, [socket, deliveryDays]);
 
-  const handlePeriodChange = async (days: number) => {
-    setDeliveryDays(days);
-    try {
-      const delRes = await reportsApi.getDeliveriesByDay(days);
-      setDeliveries(delRes.data || []);
-    } catch {
-      toast.error('Error al cargar datos del gráfico');
-    }
+    const refreshAll = () => {
+      operationalKPIs.refetch();
+      performanceKPIs.refetch();
+      incidents.refetch();
+      orders.refetch();
+      systemHealth.refetch();
+      chartData.refetch();
+    };
+
+    socket.on('order-status-updated', refreshAll);
+    socket.on('order-created', refreshAll);
+    socket.on('incident-created', refreshAll);
+    socket.on('incident-resolved', refreshAll);
+
+    return () => {
+      socket.off('order-status-updated', refreshAll);
+      socket.off('order-created', refreshAll);
+      socket.off('incident-created', refreshAll);
+      socket.off('incident-resolved', refreshAll);
+    };
+  }, [socket, operationalKPIs, performanceKPIs, incidents, orders, systemHealth, chartData]);
+
+  const handleResolveIncident = (id: string) => {
+    console.log('Resolve incident:', id);
+    incidents.refetch();
   };
 
-  const incidents = extractIncidents(allOrders);
+  const handleViewOrder = (id: string) => {
+    window.location.href = `/orders/${id}`;
+  };
 
-  if (loading) {
-    return (
-      <MainLayout title="Inicio" showFooter>
-        <div className="flex items-center justify-center h-full min-h-[60vh]">
-          <LoadingSpinner size="lg" />
-        </div>
-      </MainLayout>
-    );
-  }
+  const handleReassignOrder = (id: string) => {
+    console.log('Reassign order:', id);
+    orders.refetch();
+  };
+
+  const handleUpdateOrderStatus = (id: string) => {
+    console.log('Update order status:', id);
+    orders.refetch();
+  };
+
+  const handleAssignDriver = (id: string) => {
+    console.log('Assign driver:', id);
+    orders.refetch();
+  };
+
+  const handleMetricChange = (metric: MetricType) => {
+    setSelectedMetric(metric);
+  };
+
+  const isAnyLoading = 
+    operationalKPIs.loading || 
+    performanceKPIs.loading || 
+    incidents.loading || 
+    orders.loading || 
+    systemHealth.loading;
 
   return (
-    <MainLayout title="Inicio" showFooter notificationCount={incidents.length > 0 ? incidents.length : undefined}>
-      {/* KPI Cards Row */}
-      {kpis && (
-        <div className="mb-6">
-          <DashboardKpiCards kpis={kpis} />
+    <MainLayout title="Inicio" showFooter>
+      {/* Header with system health and mode toggle */}
+      <div className="flex items-center justify-between mb-6">
+        <SystemHealthIndicator health={systemHealth.data} loading={systemHealth.loading} />
+        <DashboardModeToggle mode={mode} onModeChange={setMode} />
+      </div>
+
+      {/* Operational KPIs */}
+      {operationalKPIs.data && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <KPICard metric={operationalKPIs.data.ordersInRoute} loading={operationalKPIs.loading} />
+          <KPICard metric={operationalKPIs.data.pendingOrders} loading={operationalKPIs.loading} />
+          <KPICard metric={operationalKPIs.data.activeVehicles} loading={operationalKPIs.loading} />
+          <KPICard metric={operationalKPIs.data.activeIncidents} loading={operationalKPIs.loading} />
+          <KPICard metric={operationalKPIs.data.delayedOrders} loading={operationalKPIs.loading} />
         </div>
       )}
 
-      {/* Middle Section: Chart + Recent Orders */}
-      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
-        {/* Delivery Chart - 3/5 width */}
-        <div className="lg:col-span-3">
-          <DeliveryAreaChart data={deliveries} onPeriodChange={handlePeriodChange} />
+      {/* Performance KPIs */}
+      {performanceKPIs.data && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <KPICard metric={performanceKPIs.data.deliveredToday} loading={performanceKPIs.loading} />
+          <KPICard metric={performanceKPIs.data.slaCompliance} loading={performanceKPIs.loading} />
+          <KPICard metric={performanceKPIs.data.avgDeliveryTime} loading={performanceKPIs.loading} />
+          <KPICard metric={performanceKPIs.data.successRate} loading={performanceKPIs.loading} />
+          <KPICard metric={performanceKPIs.data.avgDelay} loading={performanceKPIs.loading} />
         </div>
+      )}
 
-        {/* Recent Orders Table - 2/5 width */}
-        <div className="lg:col-span-2">
-          <RecentOrdersTable orders={recentOrders} />
+      {mode === DashboardMode.ANALYTICS ? (
+        /* Analytics Mode */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Chart - 2/3 width */}
+          <div className="lg:col-span-2">
+            <AnalyticsChart 
+              data={chartData.data} 
+              loading={chartData.loading}
+              selectedMetric={selectedMetric}
+              onMetricChange={handleMetricChange}
+            />
+          </div>
+
+          {/* Alert Center - 1/3 width */}
+          <div className="lg:col-span-1">
+            <AlertCenter
+              incidents={incidents.data}
+              loading={incidents.loading}
+              onResolve={handleResolveIncident}
+              onViewOrder={handleViewOrder}
+              onReassign={handleReassignOrder}
+            />
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Operations Mode - Dispatch Board */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Alert Center - 1/3 width */}
+          <div className="lg:col-span-1">
+            <AlertCenter
+              incidents={incidents.data}
+              loading={incidents.loading}
+              onResolve={handleResolveIncident}
+              onViewOrder={handleViewOrder}
+              onReassign={handleReassignOrder}
+            />
+          </div>
 
-      {/* Incidents Panel - Full width */}
-      <div>
-        <IncidentsPanel incidents={incidents} total={incidents.length + 1} />
-      </div>
+          {/* Orders Table - 2/3 width */}
+          <div className="lg:col-span-2">
+            <OrdersTable
+              orders={orders.data}
+              loading={orders.loading}
+              onViewOrder={handleViewOrder}
+              onUpdateStatus={handleUpdateOrderStatus}
+              onAssignDriver={handleAssignDriver}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Orders Table - Full width (always shown in analytics mode) */}
+      {mode === DashboardMode.ANALYTICS && (
+        <div>
+          <OrdersTable
+            orders={orders.data}
+            loading={orders.loading}
+            onViewOrder={handleViewOrder}
+            onUpdateStatus={handleUpdateOrderStatus}
+            onAssignDriver={handleAssignDriver}
+          />
+        </div>
+      )}
     </MainLayout>
   );
 };
