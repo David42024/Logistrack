@@ -49,4 +49,22 @@ export class ReportsController {
   getAnalytics() {
     return this.reportsService.getAnalytics();
   }
+
+  @Get('incidents-by-day')
+  @Roles(Role.ADMIN, Role.COORDINATOR)
+  getIncidentsByDay(@Query('days') days = '7') {
+    return this.reportsService.getIncidentsByDay(Number(days));
+  }
+
+  @Get('avg-time-by-day')
+  @Roles(Role.ADMIN, Role.COORDINATOR)
+  getAvgTimeByDay(@Query('days') days = '7') {
+    return this.reportsService.getAvgTimeByDay(Number(days));
+  }
+
+  @Get('active-orders-by-day')
+  @Roles(Role.ADMIN, Role.COORDINATOR)
+  getActiveOrdersByDay(@Query('days') days = '7') {
+    return this.reportsService.getActiveOrdersByDay(Number(days));
+  }
 }

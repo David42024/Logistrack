@@ -204,4 +204,79 @@ export class ReportsService {
       })),
     };
   }
+
+  async getIncidentsByDay(days = 7) {
+    const results = [];
+    const totalDays = Number.isFinite(days) && days > 0 ? Math.min(days, 30) : 7;
+    
+    for (let i = totalDays - 1; i >= 0; i--) {
+      const day = dayjs().subtract(i, 'day');
+      const from = day.startOf('day').toDate();
+      const to = day.endOf('day').toDate();
+      
+      // Count orders with incidents (orders that have history with incident notes or images)
+      const count = await this.ordersRepository
+        .createQueryBuilder('o')
+        .leftJoin('o.history', 'h')
+        .where('o.createdAt >= :from', { from })
+        .andWhere('o.createdAt <= :to', { to })
+        .andWhere('(h.incidentImage IS NOT NULL OR (h.notes IS NOT NULL AND h.notes != :empty))', { empty: '' })
+        .getCount();
+      
+      results.push({ date: day.format('DD/MM'), count });
+    }
+    
+    return results;
+  }
+
+  async getAvgTimeByDay(days = 7) {
+    const results = [];
+    const totalDays = Number.isFinite(days) && days > 0 ? Math.min(days, 30) : 7;
+    
+    for (let i = totalDays - 1; i >= 0; i--) {
+      const day = dayjs().subtract(i, 'day');
+      const from = day.startOf('day').toDate();
+      const to = day.endOf('day').toDate();
+      
+      // Calculate average delivery time for delivered orders on this day
+      const result = await this.ordersRepository
+        .createQueryBuilder('o')
+        .select('AVG(EXTRACT(EPOCH FROM (o.deliveredAt - o.createdAt))/60)', 'avgTime')
+        .where('o.status = :s', { s: OrderStatus.DELIVERED })
+        .andWhere('o.deliveredAt >= :from', { from })
+        .andWhere('o.deliveredAt <= :to', { to })
+        .andWhere('o.deliveredAt IS NOT NULL')
+        .getRawOne();
+      
+      const avgTime = result?.avgTime ? parseFloat(result.avgTime).toFixed(1) : 0;
+      results.push({ date: day.format('DD/MM'), avgTime: parseFloat(avgTime) });
+    }
+    
+    return results;
+  }
+
+  async getActiveOrdersByDay(days = 7) {
+    const results = [];
+    const totalDays = Number.isFinite(days) && days > 0 ? Math.min(days, 30) : 7;
+    
+    for (let i = totalDays - 1; i >= 0; i--) {
+      const day = dayjs().subtract(i, 'day');
+      const from = day.startOf('day').toDate();
+      const to = day.endOf('day').toDate();
+      
+      // Count orders that were active (pending, preparing, or transit) on this day
+      const count = await this.ordersRepository
+        .createQueryBuilder('o')
+        .where('o.createdAt <= :to', { to })
+        .andWhere('(o.deliveredAt >= :from OR o.deliveredAt IS NULL)', { from })
+        .andWhere('o.status IN (:...statuses)', { 
+          statuses: [OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.TRANSIT] 
+        })
+        .getCount();
+      
+      results.push({ date: day.format('DD/MM'), count });
+    }
+    
+    return results;
+  }
 }
