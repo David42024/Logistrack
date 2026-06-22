@@ -248,7 +248,7 @@ export class ReportsService {
         .andWhere('o.deliveredAt IS NOT NULL')
         .getRawOne();
       
-      const avgTime = result?.avgTime ? parseFloat(result.avgTime).toFixed(1) : 0;
+      const avgTime = result?.avgTime ? parseFloat(result.avgTime).toFixed(1) : '0';
       results.push({ date: day.format('DD/MM'), avgTime: parseFloat(avgTime) });
     }
     
