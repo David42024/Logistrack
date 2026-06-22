@@ -16,6 +16,8 @@ import DriversPage from './pages/DriversPage';
 import DriverDashboardPage from './pages/DriverDashboardPage';
 import TrackOrderPage from './pages/TrackOrderPage';
 import ReportsPage from './pages/ReportsPage';
+import CustomersPage from './pages/CustomersPage';
+import RoutesPage from './pages/RoutesPage';
 
 const App: React.FC = () => (
   <ThemeProvider>
@@ -48,6 +50,11 @@ const App: React.FC = () => (
                 <OrderDetailPage />
               </ProtectedRoute>
             } />
+            <Route path="/routes" element={
+              <ProtectedRoute roles={['admin', 'coordinator']}>
+                <RoutesPage />
+              </ProtectedRoute>
+            } />
             <Route path="/assignments" element={
               <ProtectedRoute roles={['admin', 'coordinator']}>
                 <AssignmentsPage />
@@ -56,6 +63,11 @@ const App: React.FC = () => (
             <Route path="/drivers" element={
               <ProtectedRoute roles={['admin', 'coordinator']}>
                 <DriversPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/customers" element={
+              <ProtectedRoute roles={['admin', 'coordinator']}>
+                <CustomersPage />
               </ProtectedRoute>
             } />
             <Route path="/reports" element={

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import { ordersApi } from '../api/orders.api';
-import { customersApi } from '../api/drivers.api';
+import { customersApi } from '../api/customers.api';
 import toast from 'react-hot-toast';
 
 const CreateOrderPage: React.FC = () => {
@@ -21,8 +21,9 @@ const CreateOrderPage: React.FC = () => {
   });
 
   useEffect(() => {
-    customersApi.getAll(customerSearch).then((r) => setCustomers(r.data));
-  }, [customerSearch]);
+    if (form.customerId) return;
+    customersApi.getAll({ search: customerSearch }).then((r) => setCustomers(r.data));
+  }, [customerSearch, form.customerId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -57,33 +58,51 @@ const CreateOrderPage: React.FC = () => {
             {/* Customer */}
             <div>
               <label className={labelClass}>Cliente</label>
-              <input
-                type="text"
-                placeholder="Buscar cliente..."
-                value={customerSearch}
-                onChange={(e) => setCustomerSearch(e.target.value)}
-                className={inputClass}
-              />
-              {customers.length > 0 && !form.customerId && (
-                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Buscar cliente..."
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  disabled={!!form.customerId}
+                  className={`${inputClass} ${form.customerId ? 'bg-gray-100 dark:bg-gray-850 cursor-not-allowed border-green-400 dark:border-green-600' : ''}`}
+                />
+                {form.customerId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm({ ...form, customerId: '' });
+                      setCustomerSearch('');
+                      setCustomers([]);
+                    }}
+                    className="absolute right-3 top-2 text-xs font-semibold text-red-500 hover:text-red-750 dark:text-red-400"
+                  >
+                    Cambiar
+                  </button>
+                )}
+              </div>
+              {customers.length > 0 && !form.customerId && customerSearch && (
+                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 z-10 relative">
                   {customers.map((c) => (
                     <button
                       key={c.id}
                       type="button"
-                      className="w-full border-b border-gray-100 px-3 py-2 text-left text-sm hover:bg-blue-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                      className="w-full border-b border-gray-100 dark:border-gray-700 px-3 py-2 text-left text-sm hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
                       onClick={() => {
                         setForm({ ...form, customerId: c.id });
                         setCustomerSearch(c.name);
                       }}
                     >
-                      <span className="font-medium">{c.name}</span>
-                      <span className="ml-2 text-gray-400 dark:text-gray-500">{c.email}</span>
+                      <span className="font-semibold">{c.name}</span>
+                      <span className="ml-2 text-gray-400 dark:text-gray-500 text-xs">{c.email}</span>
                     </button>
                   ))}
                 </div>
               )}
               {form.customerId && (
-                <p className="mt-1 text-xs text-green-600 dark:text-green-300">✓ Cliente seleccionado</p>
+                <p className="mt-1 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                  <span>✓ Cliente seleccionado correctamente</span>
+                </p>
               )}
             </div>
 

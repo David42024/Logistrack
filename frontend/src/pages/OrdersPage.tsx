@@ -72,41 +72,21 @@ const OrdersPage: React.FC = () => {
         onSearchChange={(v) => { setSearch(v); setPage(1); }}
       />
 
-      {loading ? (
-        <LoadingSpinner size="lg" />
-      ) : (
-        <>
-          <OrderTable
-            orders={data?.data || []}
-            showAssign={canAssign}
-            onAssign={(order) => setAssignOrder(order)}
-          />
-          {/* Pagination */}
-          {data && data.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {data.total} pedidos · página {data.page} de {data.totalPages}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  disabled={page === 1}
-                  onClick={() => setPage((p) => p - 1)}
-                  className="rounded-lg border border-gray-300 px-3 py-1 text-sm disabled:opacity-40 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
-                >
-                  ← Anterior
-                </button>
-                <button
-                  disabled={page === data.totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="rounded-lg border border-gray-300 px-3 py-1 text-sm disabled:opacity-40 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
-                >
-                  Siguiente →
-                </button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      <OrderTable
+        orders={data?.data || []}
+        showAssign={canAssign}
+        onAssign={(order) => setAssignOrder(order)}
+        loading={loading}
+        pagination={
+          data && data.totalPages > 1
+            ? {
+                currentPage: page,
+                totalPages: data.totalPages,
+                onPageChange: (p) => setPage(p),
+              }
+            : undefined
+        }
+      />
 
       {assignOrder && (
         <AssignDriverModal
