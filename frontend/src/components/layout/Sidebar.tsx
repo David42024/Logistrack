@@ -7,6 +7,7 @@ import {
   Package,
   Route,
   Users,
+  Contact,
   Truck,
   AlertTriangle,
   BarChart2,
@@ -15,6 +16,8 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardList,
+  Map,
+  UserCheck,
 } from 'lucide-react';
 
 interface NavItem {
@@ -39,15 +42,27 @@ const allNavItems: NavItem[] = [
     roles: ['admin', 'coordinator'],
   },
   {
-    to: '/assignments',
+    to: '/routes',
     label: 'Rutas',
-    icon: <Route size={18} />,
+    icon: <Map size={18} />,
+    roles: ['admin', 'coordinator'],
+  },
+  {
+    to: '/assignments',
+    label: 'Asignaciones',
+    icon: <UserCheck size={18} />,
     roles: ['admin', 'coordinator'],
   },
   {
     to: '/drivers',
     label: 'Transportistas',
     icon: <Users size={18} />,
+    roles: ['admin', 'coordinator'],
+  },
+  {
+    to: '/customers',
+    label: 'Clientes',
+    icon: <Contact size={18} />,
     roles: ['admin', 'coordinator'],
   },
   {
