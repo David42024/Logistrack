@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import OrderStatusBadge from '../components/orders/OrderStatusBadge';
-import OrderTimeline from '../components/orders/OrderTimeline';
+import OrderStatusTimeline from '../components/common/OrderStatusTimeline';
 import { AssignDriverModal } from '../components/drivers/DriverCard';
 import { LoadingSpinner } from '../components/common/StatsCard';
 import { ordersApi } from '../api/orders.api';
@@ -220,8 +220,7 @@ const OrderDetailPage: React.FC = () => {
 
         {/* Timeline */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="font-semibold text-gray-700 mb-4">Historial</h3>
-          <OrderTimeline history={order.history || []} />
+          <OrderStatusTimeline currentStatus={order.status} history={order.history || []} />
         </div>
       </div>
 
