@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 import toast from 'react-hot-toast';
@@ -381,16 +381,16 @@ const LoginPage: React.FC = () => {
                   )}
 
                   {/* Forgot password */}
-                  <button
-                    type="button"
-                    className={`mt-2 text-sm transition-colors ${
+                  <Link
+                    to="/forgot-password"
+                    className={`mt-2 inline-block text-sm transition-colors ${
                       isDark
                         ? 'text-blue-400 hover:text-blue-300'
                         : 'text-blue-500 hover:text-blue-700'
                     }`}
                   >
                     ¿Olvidaste tu contraseña?
-                  </button>
+                  </Link>
                 </div>
 
                 {/* Submit button */}

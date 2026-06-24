@@ -2,12 +2,20 @@ import React from 'react';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
-import { Search, Bell, Sun, Moon, ChevronDown } from 'lucide-react';
+import { Search, Bell, Sun, Moon, ChevronDown, Menu } from 'lucide-react';
 
-const Navbar: React.FC<{ title: string; showSearch?: boolean; notificationCount?: number }> = ({
+interface NavbarProps {
+  title: string;
+  showSearch?: boolean;
+  notificationCount?: number;
+  onMenuClick?: () => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({
   title,
   showSearch = true,
   notificationCount,
+  onMenuClick,
 }) => {
   const { isConnected } = useSocket();
   const { user } = useAuth();
@@ -16,13 +24,23 @@ const Navbar: React.FC<{ title: string; showSearch?: boolean; notificationCount?
   const initials = user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'US';
 
   return (
-    <header className="flex items-center gap-4 border-b border-gray-200 bg-white px-6 py-3 dark:border-gray-700 dark:bg-gray-800 sticky top-0 z-10">
+    <header className="flex items-center gap-4 border-b border-gray-200 bg-white px-4 sm:px-6 py-3 dark:border-gray-700 dark:bg-gray-800 sticky top-0 z-10">
+      {onMenuClick && (
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
+          aria-label="Abrir menú"
+        >
+          <Menu size={20} />
+        </button>
+      )}
+
       {/* Title */}
-      <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex-shrink-0">{title}</h2>
+      <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 flex-shrink-0">{title}</h2>
 
       {/* Search bar - center */}
       {showSearch && (
-        <div className="flex-1 px-4 max-w-md mx-auto">
+        <div className="hidden md:block flex-1 px-4 max-w-md mx-auto">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input

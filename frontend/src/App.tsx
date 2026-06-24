@@ -18,6 +18,7 @@ import TrackOrderPage from './pages/TrackOrderPage';
 import ReportsPage from './pages/ReportsPage';
 import CustomersPage from './pages/CustomersPage';
 import RoutesPage from './pages/RoutesPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
 const App: React.FC = () => (
   <ThemeProvider>
@@ -27,6 +28,7 @@ const App: React.FC = () => (
           <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/track" element={<TrackOrderPage />} />
 
             {/* Admin & Coordinator */}

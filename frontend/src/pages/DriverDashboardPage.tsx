@@ -76,12 +76,12 @@ const DriverDashboardPage: React.FC = () => {
 
   return (
     <MainLayout title="Mis Pedidos">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Mis Pedidos Activos</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">Hola, {user?.name}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           {queue.length > 0 && (
             <button
               onClick={syncQueue}
@@ -108,27 +108,29 @@ const DriverDashboardPage: React.FC = () => {
           {orders.map((order) => {
             const actions = statusTransitions[order.status] || [];
             return (
-              <div key={order.id} className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <span className="text-lg font-bold font-mono text-blue-600 dark:text-sky-300">{order.orderNumber}</span>
-                    <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">{order.customer?.name}</p>
+              <div key={order.id} className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 dark:border-gray-700 dark:bg-gray-800">
+                <div className="flex justify-between items-start mb-3 gap-2">
+                  <div className="min-w-0">
+                    <span className="text-base sm:text-lg font-bold font-mono text-blue-600 dark:text-sky-300 break-all">{order.orderNumber}</span>
+                    <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300 truncate">{order.customer?.name}</p>
                   </div>
-                  <OrderStatusBadge status={order.status} />
+                  <div className="flex-shrink-0">
+                    <OrderStatusBadge status={order.status} />
+                  </div>
                 </div>
 
-                <div className="mb-4 grid grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-300">
+                <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-300">
                   <div>
                     <p className="text-xs text-gray-400 dark:text-gray-500">Origen</p>
-                    <p className="font-medium">{order.origin}</p>
+                    <p className="font-medium break-words">{order.origin}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 dark:text-gray-500">Destino</p>
-                    <p className="font-medium">{order.destination}</p>
+                    <p className="font-medium break-words">{order.destination}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 dark:text-gray-500">Mercancía</p>
-                    <p className="font-medium">{order.merchandiseType} · {order.weight} kg</p>
+                    <p className="font-medium break-words">{order.merchandiseType} · {order.weight} kg</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 dark:text-gray-500">Asignado</p>

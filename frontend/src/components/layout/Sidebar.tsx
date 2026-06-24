@@ -18,6 +18,7 @@ import {
   ClipboardList,
   Map,
   UserCheck,
+  X,
 } from 'lucide-react';
 
 interface NavItem {
@@ -102,7 +103,12 @@ const allNavItems: NavItem[] = [
   },
 ];
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
   const { user, logout } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -122,19 +128,41 @@ const Sidebar: React.FC = () => {
   );
 
   return (
-    <aside className="flex flex-col w-64 min-h-screen bg-gray-900 dark:bg-gray-950 flex-shrink-0">
-      {/* Logo */}
-      <div className="px-5 py-6 border-b border-gray-800 dark:border-gray-900">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
-            <Truck size={16} className="text-white" />
+    <>
+      {/* Backdrop for mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gray-900 dark:bg-gray-950 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Logo and close button */}
+        <div className="px-5 py-6 border-b border-gray-800 dark:border-gray-900 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
+              <Truck size={16} className="text-white" />
+            </div>
+            <span className="text-white font-bold text-sm tracking-wide leading-tight">
+              PLATAFORMA<br />
+              <span className="text-blue-400">LOGÍSTICA</span>
+            </span>
           </div>
-          <span className="text-white font-bold text-sm tracking-wide leading-tight">
-            PLATAFORMA<br />
-            <span className="text-blue-400">LOGÍSTICA</span>
-          </span>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="lg:hidden p-1.5 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+              aria-label="Cerrar menú"
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
-      </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
@@ -218,6 +246,7 @@ const Sidebar: React.FC = () => {
         </button>
       </div>
     </aside>
+    </>
   );
 };
 
