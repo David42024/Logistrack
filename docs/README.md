@@ -27,7 +27,30 @@ docker-compose up --build
 
 Espera ~60 segundos para que todo inicie.
 
-### 3. Acceder
+### 3. Comandos de Base de Datos (Locales / Desarrollo)
+
+El proyecto utiliza scripts de TypeORM dentro del contexto de NestJS para interactuar con la base de datos de manera agnóstica al sistema operativo, consumiendo automáticamente las credenciales definidas en `backend/.env.local` sin requerir la CLI de `psql` local:
+
+* **Inicializar base de datos** (habilita extensión `uuid-ossp`):
+  ```bash
+  pnpm db:init
+  ```
+* **Poblar datos semilla** (inserta usuarios, drivers y clientes base):
+  ```bash
+  pnpm db:seed
+  ```
+* **Limpiar base de datos** (elimina todas las tablas del esquema):
+  ```bash
+  pnpm db:drop
+  ```
+* **Reiniciar base de datos completa** (limpia esquema, sincroniza tablas y puebla semillas):
+  ```bash
+  pnpm db:reset
+  ```
+
+*Nota: También puedes usar `npm run <comando>` si prefieres.*
+
+### 4. Acceder
 
 | Servicio | URL |
 |----------|-----|

@@ -35,6 +35,12 @@ El sistema se distribuye entre los integrantes según el alcance establecido en 
 - Los componentes compartidos deben ser desarrollados en ramas separadas y mergeados a `main` antes de que otros los usen.
 - Nunca hacer push directo a `main`.
 
+### Scripts de Base de Datos sin psql Local
+- Se han migrado los scripts de base de datos (`db:init`, `db:seed`, `db:reset`, `db:drop`) a TypeScript/TypeORM ejecutándose dentro de NestJS.
+- **Ya no es necesario tener la herramienta `psql` instalada localmente** ni quemar credenciales en el `package.json`.
+- Los scripts cargan las credenciales automáticamente desde el archivo `.env.local` en el backend.
+- Se pueden ejecutar desde la raíz del proyecto usando `pnpm db:init`, `pnpm db:seed`, `pnpm db:reset` o `pnpm db:drop` (o con `npm run`).
+
 ---
 
 ## � Requerimientos Técnicos del Sistema

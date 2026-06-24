@@ -10,9 +10,10 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
-    "db:seed": "psql -U transport_user -d transport_db -f scripts/seed.sql",
-    "db:init": "psql -U transport_user -d transport_db -f scripts/init-db.sql",
-    "db:reset": "psql -U transport_user -d transport_db -f scripts/init-db.sql && psql -U transport_user -d transport_db -f scripts/seed.sql"
+    "db:seed": "npx ts-node src/seed.ts",
+    "db:init": "npx ts-node src/db-init.ts",
+    "db:reset": "npx ts-node src/db-reset.ts",
+    "db:drop": "npx ts-node src/db-drop.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -46,6 +47,7 @@
     "@types/node": "^20.0.0",
     "@types/passport-jwt": "^3.0.13",
     "@types/pdfkit": "^0.13.3",
+    "ts-node": "^10.9.1",
     "typescript": "^5.1.3"
   }
 }
