@@ -19,6 +19,7 @@ import ReportsPage from './pages/ReportsPage';
 import CustomersPage from './pages/CustomersPage';
 import RoutesPage from './pages/RoutesPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import UsersPage from './pages/UsersPage';
 
 const App: React.FC = () => (
   <ThemeProvider>
@@ -75,6 +76,11 @@ const App: React.FC = () => (
             <Route path="/reports" element={
               <ProtectedRoute roles={['admin', 'coordinator']}>
                 <ReportsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/users" element={
+              <ProtectedRoute roles={['admin']}>
+                <UsersPage />
               </ProtectedRoute>
             } />
 

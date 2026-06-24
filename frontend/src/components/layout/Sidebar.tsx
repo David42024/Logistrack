@@ -19,6 +19,7 @@ import {
   Map,
   UserCheck,
   X,
+  UserCog,
 } from 'lucide-react';
 
 interface NavItem {
@@ -87,6 +88,12 @@ const allNavItems: NavItem[] = [
     children: [
       { to: '/reports', label: 'Estadísticas' },
     ],
+  },
+  {
+    to: '/users',
+    label: 'Usuarios',
+    icon: <UserCog size={18} />,
+    roles: ['admin'],
   },
   {
     to: '/settings',

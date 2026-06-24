@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -26,7 +27,11 @@ export class UsersService {
   }
 
   async update(id: string, data: Partial<User>) {
-    await this.usersRepository.update(id, data);
+    const updateData = { ...data };
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 10);
+    }
+    await this.usersRepository.update(id, updateData);
     return this.findOne(id);
   }
 
