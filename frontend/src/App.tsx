@@ -8,18 +8,14 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import OrdersPage from './pages/OrdersPage';
-import CreateOrderPage from './pages/CreateOrderPage';
-import OrderDetailPage from './pages/OrderDetailPage';
-import AssignmentsPage from './pages/AssignmentsPage';
-import DriversPage from './pages/DriversPage';
+import LogisticaPage from './pages/LogisticaPage';
+import CatalogosPage from './pages/CatalogosPage';
+import IncidenciasPage from './pages/IncidenciasPage';
+import AdministracionPage from './pages/AdministracionPage';
 import DriverDashboardPage from './pages/DriverDashboardPage';
 import TrackOrderPage from './pages/TrackOrderPage';
 import ReportsPage from './pages/ReportsPage';
-import CustomersPage from './pages/CustomersPage';
-import RoutesPage from './pages/RoutesPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import UsersPage from './pages/UsersPage';
 
 const App: React.FC = () => (
   <ThemeProvider>
@@ -38,39 +34,19 @@ const App: React.FC = () => (
                 <DashboardPage />
               </ProtectedRoute>
             } />
-            <Route path="/orders" element={
-              <ProtectedRoute roles={['admin', 'coordinator', 'driver']}>
-                <OrdersPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/orders/create" element={
+            <Route path="/logistica" element={
               <ProtectedRoute roles={['admin', 'coordinator']}>
-                <CreateOrderPage />
+                <LogisticaPage />
               </ProtectedRoute>
             } />
-            <Route path="/orders/:id" element={
-              <ProtectedRoute roles={['admin', 'coordinator', 'driver']}>
-                <OrderDetailPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/routes" element={
+            <Route path="/catalogos" element={
               <ProtectedRoute roles={['admin', 'coordinator']}>
-                <RoutesPage />
+                <CatalogosPage />
               </ProtectedRoute>
             } />
-            <Route path="/assignments" element={
+            <Route path="/incidencias" element={
               <ProtectedRoute roles={['admin', 'coordinator']}>
-                <AssignmentsPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/drivers" element={
-              <ProtectedRoute roles={['admin', 'coordinator']}>
-                <DriversPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/customers" element={
-              <ProtectedRoute roles={['admin', 'coordinator']}>
-                <CustomersPage />
+                <IncidenciasPage />
               </ProtectedRoute>
             } />
             <Route path="/reports" element={
@@ -78,9 +54,9 @@ const App: React.FC = () => (
                 <ReportsPage />
               </ProtectedRoute>
             } />
-            <Route path="/users" element={
+            <Route path="/administracion" element={
               <ProtectedRoute roles={['admin']}>
-                <UsersPage />
+                <AdministracionPage />
               </ProtectedRoute>
             } />
 

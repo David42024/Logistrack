@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { usePermissions } from '../../hooks/usePermissions';
 import {
   LayoutDashboard,
   Package,
-  Route,
-  Users,
-  Contact,
   Truck,
   AlertTriangle,
   BarChart2,
@@ -16,10 +14,7 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardList,
-  Map,
-  UserCheck,
   X,
-  UserCog,
 } from 'lucide-react';
 
 interface NavItem {
@@ -28,6 +23,7 @@ interface NavItem {
   icon: React.ReactNode;
   children?: { to: string; label: string }[];
   roles?: string[];
+  permissions?: string[];
 }
 
 const allNavItems: NavItem[] = [
@@ -35,71 +31,43 @@ const allNavItems: NavItem[] = [
     to: '/dashboard',
     label: 'Inicio',
     icon: <LayoutDashboard size={18} />,
-    roles: ['admin', 'coordinator'],
+    roles: ['admin', 'coordinator', 'driver'],
+    permissions: ['dashboard.read'],
   },
   {
-    to: '/orders',
-    label: 'Pedidos',
+    to: '/logistica',
+    label: 'Pedidos y Entregas',
     icon: <Package size={18} />,
     roles: ['admin', 'coordinator'],
+    permissions: ['orders.read'],
   },
   {
-    to: '/routes',
-    label: 'Rutas',
-    icon: <Map size={18} />,
+    to: '/catalogos',
+    label: 'Catálogos',
+    icon: <ClipboardList size={18} />,
     roles: ['admin', 'coordinator'],
+    permissions: ['customers.read', 'drivers.read', 'fleet.read'],
   },
   {
-    to: '/assignments',
-    label: 'Asignaciones',
-    icon: <UserCheck size={18} />,
-    roles: ['admin', 'coordinator'],
-  },
-  {
-    to: '/drivers',
-    label: 'Transportistas',
-    icon: <Users size={18} />,
-    roles: ['admin', 'coordinator'],
-  },
-  {
-    to: '/customers',
-    label: 'Clientes',
-    icon: <Contact size={18} />,
-    roles: ['admin', 'coordinator'],
-  },
-  {
-    to: '/fleet',
-    label: 'Flota',
-    icon: <Truck size={18} />,
-    roles: ['admin', 'coordinator'],
-  },
-  {
+    to: '/incidencias',
     label: 'Incidencias',
     icon: <AlertTriangle size={18} />,
     roles: ['admin', 'coordinator'],
-    children: [
-      { to: '/orders', label: 'Ver incidencias' },
-    ],
+    permissions: ['incidents.read'],
   },
   {
+    to: '/reports',
     label: 'Reportes',
     icon: <BarChart2 size={18} />,
     roles: ['admin', 'coordinator'],
-    children: [
-      { to: '/reports', label: 'Estadísticas' },
-    ],
+    permissions: ['reports.read'],
   },
   {
-    to: '/users',
-    label: 'Usuarios',
-    icon: <UserCog size={18} />,
-    roles: ['admin'],
-  },
-  {
-    to: '/settings',
-    label: 'Configuración',
+    to: '/administracion',
+    label: 'Administración',
     icon: <Settings size={18} />,
     roles: ['admin', 'coordinator'],
+    permissions: ['users.read', 'roles.read'],
   },
   // Específico para transportistas
   {
@@ -107,6 +75,7 @@ const allNavItems: NavItem[] = [
     label: 'Mis Pedidos',
     icon: <ClipboardList size={18} />,
     roles: ['driver'],
+    permissions: ['orders.read'],
   },
 ];
 
@@ -120,6 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+  const { canAny: hasAnyPerm } = usePermissions(user?.role);
 
   const handleLogout = () => {
     logout();
@@ -130,9 +100,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
     setOpenMenus((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const visibleItems = allNavItems.filter(
-    (item) => !item.roles || item.roles.includes(user?.role ?? '')
-  );
+  const visibleItems = allNavItems.filter((item) => {
+    if (item.roles && !item.roles.includes(user?.role ?? '')) return false;
+    if (item.permissions && !item.permissions.some(p => hasAnyPerm(p))) return false;
+    return true;
+  });
 
   return (
     <>

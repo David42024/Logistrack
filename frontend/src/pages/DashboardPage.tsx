@@ -8,6 +8,8 @@ import { SystemHealthIndicator } from '../components/dashboard/SystemHealthIndic
 import { DashboardModeToggle } from '../components/dashboard/DashboardModeToggle';
 import { DashboardMode, MetricType } from '../types/dashboard.types';
 import { useSocket } from '../contexts/SocketContext';
+import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 import {
   useOperationalKPIs,
   usePerformanceKPIs,
@@ -21,6 +23,13 @@ const DashboardPage: React.FC = () => {
   const [mode, setMode] = useState<DashboardMode>(DashboardMode.ANALYTICS);
   const [selectedMetric, setSelectedMetric] = useState<MetricType>(MetricType.DELIVERIES);
   const { socket } = useSocket();
+  const { user } = useAuth();
+  const { can } = usePermissions(user?.role);
+  const canCreateOrder = can('orders.create');
+  const canUpdateOrder = can('orders.update');
+  const canAssignOrder = can('orders.assign');
+  const canResolveIncident = can('incidents.update');
+  const canReassignIncident = can('incidents.assign');
 
   // Data hooks
   const operationalKPIs = useOperationalKPIs();
@@ -142,6 +151,8 @@ const DashboardPage: React.FC = () => {
               onResolve={handleResolveIncident}
               onViewOrder={handleViewOrder}
               onReassign={handleReassignOrder}
+              canResolve={canResolveIncident}
+              canReassign={canReassignIncident}
             />
           </div>
         </div>
@@ -156,6 +167,8 @@ const DashboardPage: React.FC = () => {
               onResolve={handleResolveIncident}
               onViewOrder={handleViewOrder}
               onReassign={handleReassignOrder}
+              canResolve={canResolveIncident}
+              canReassign={canReassignIncident}
             />
           </div>
 
@@ -167,6 +180,9 @@ const DashboardPage: React.FC = () => {
               onViewOrder={handleViewOrder}
               onUpdateStatus={handleUpdateOrderStatus}
               onAssignDriver={handleAssignDriver}
+              showCreate={canCreateOrder}
+              showUpdateStatus={canUpdateOrder}
+              showAssignDriver={canAssignOrder}
             />
           </div>
         </div>
