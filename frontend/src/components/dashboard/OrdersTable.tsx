@@ -7,6 +7,9 @@ interface OrdersTableProps {
   onViewOrder?: (id: string) => void;
   onUpdateStatus?: (id: string) => void;
   onAssignDriver?: (id: string) => void;
+  showCreate?: boolean;
+  showUpdateStatus?: boolean;
+  showAssignDriver?: boolean;
 }
 
 export const OrdersTable: React.FC<OrdersTableProps> = ({ 
@@ -14,7 +17,10 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
   loading, 
   onViewOrder, 
   onUpdateStatus, 
-  onAssignDriver 
+  onAssignDriver,
+  showCreate = true,
+  showUpdateStatus = true,
+  showAssignDriver = true,
 }) => {
   const getStatusBadge = (status: string) => {
     const statusMap: { [key: string]: { color: string; label: string } } = {
@@ -77,12 +83,14 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
         </div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No hay pedidos</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Comienza creando tu primer pedido</p>
-        <button
-          onClick={() => window.location.href = '/orders/create'}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
-        >
-          Crear primer pedido
-        </button>
+        {showCreate && (
+          <button
+            onClick={() => window.location.href = '/orders/create'}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+          >
+            Crear primer pedido
+          </button>
+        )}
       </div>
     );
   }
@@ -145,18 +153,22 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
                     >
                       Ver detalle
                     </button>
-                    <button
-                      onClick={() => onUpdateStatus?.(order.id)}
-                      className="text-green-600 hover:text-green-800 font-medium"
-                    >
-                      Cambiar estado
-                    </button>
-                    <button
-                      onClick={() => onAssignDriver?.(order.id)}
-                      className="text-purple-600 hover:text-purple-800 font-medium"
-                    >
-                      Asignar
-                    </button>
+                    {showUpdateStatus && (
+                      <button
+                        onClick={() => onUpdateStatus?.(order.id)}
+                        className="text-green-600 hover:text-green-800 font-medium"
+                      >
+                        Cambiar estado
+                      </button>
+                    )}
+                    {showAssignDriver && (
+                      <button
+                        onClick={() => onAssignDriver?.(order.id)}
+                        className="text-purple-600 hover:text-purple-800 font-medium"
+                      >
+                        Asignar
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

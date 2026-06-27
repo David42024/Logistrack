@@ -3,9 +3,10 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, FindManyOptions } from 'typeorm';
+import { Repository, Like, FindManyOptions, In } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
 import { OrderHistory } from './entities/order-history.entity';
 import { CreateOrderDto, UpdateOrderStatusDto, AssignDriverToOrderDto } from './dto/create-order.dto';
@@ -214,10 +215,13 @@ export class OrdersService {
       .getMany();
 
     const orderIds = [...new Set(incidents.map(i => i.orderId))];
-    const orders = await this.ordersRepository.find({
-      where: { id: { $in: orderIds } } as any,
-      relations: ['customer', 'driver']
-    });
+    let orders: Order[] = [];
+    if (orderIds.length > 0) {
+      orders = await this.ordersRepository.find({
+        where: { id: In(orderIds) },
+        relations: ['customer', 'driver']
+      });
+    }
 
     return incidents.map(incident => ({
       ...incident,

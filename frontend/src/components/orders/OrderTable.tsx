@@ -8,6 +8,7 @@ import { formatDate } from '../../utils/dateFormats';
 interface OrderTableProps {
   orders: Order[];
   onAssign?: (order: Order) => void;
+  onViewDetail?: (order: Order) => void;
   showAssign?: boolean;
   loading?: boolean;
   pagination?: {
@@ -20,6 +21,7 @@ interface OrderTableProps {
 const OrderTable: React.FC<OrderTableProps> = ({
   orders,
   onAssign,
+  onViewDetail,
   showAssign,
   loading = false,
   pagination,
@@ -83,7 +85,11 @@ const OrderTable: React.FC<OrderTableProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/orders/${order.id}`);
+              if (onViewDetail) {
+                onViewDetail(order);
+              } else {
+                navigate(`/orders/${order.id}`);
+              }
             }}
             className="text-xs text-blue-600 hover:underline dark:text-sky-300 font-semibold"
           >
@@ -111,7 +117,13 @@ const OrderTable: React.FC<OrderTableProps> = ({
       data={orders}
       loading={loading}
       pagination={pagination}
-      onRowClick={(order) => navigate(`/orders/${order.id}`)}
+      onRowClick={(order) => {
+        if (onViewDetail) {
+          onViewDetail(order);
+        } else {
+          navigate(`/orders/${order.id}`);
+        }
+      }}
       emptyMessage="No hay pedidos registrados en este momento."
     />
   );

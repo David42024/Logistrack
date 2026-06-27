@@ -6,13 +6,17 @@ interface AlertCardProps {
   onResolve?: (id: string) => void;
   onViewOrder?: (id: string) => void;
   onReassign?: (id: string) => void;
+  canResolve?: boolean;
+  canReassign?: boolean;
 }
 
 export const AlertCard: React.FC<AlertCardProps> = ({ 
   incident, 
   onResolve, 
   onViewOrder, 
-  onReassign 
+  onReassign,
+  canResolve = true,
+  canReassign = true,
 }) => {
   const getSeverityColor = (severity: IncidentSeverity) => {
     switch (severity) {
@@ -62,24 +66,28 @@ export const AlertCard: React.FC<AlertCardProps> = ({
       <p className="text-sm text-gray-800 dark:text-gray-200 mb-3">{incident.description}</p>
       
       <div className="flex gap-2">
-        <button
-          onClick={() => onResolve?.(incident.id)}
-          className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
-        >
-          Resolver
-        </button>
+        {canResolve && (
+          <button
+            onClick={() => onResolve?.(incident.id)}
+            className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+          >
+            Resolver
+          </button>
+        )}
         <button
           onClick={() => onViewOrder?.(incident.orderId)}
           className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
         >
           Ver pedido
         </button>
-        <button
-          onClick={() => onReassign?.(incident.orderId)}
-          className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-        >
-          Reasignar
-        </button>
+        {canReassign && (
+          <button
+            onClick={() => onReassign?.(incident.orderId)}
+            className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+          >
+            Reasignar
+          </button>
+        )}
       </div>
     </div>
   );

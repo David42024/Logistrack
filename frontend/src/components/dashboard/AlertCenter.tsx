@@ -8,6 +8,8 @@ interface AlertCenterProps {
   onResolve?: (id: string) => void;
   onViewOrder?: (id: string) => void;
   onReassign?: (id: string) => void;
+  canResolve?: boolean;
+  canReassign?: boolean;
 }
 
 export const AlertCenter: React.FC<AlertCenterProps> = ({ 
@@ -15,7 +17,9 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({
   loading, 
   onResolve, 
   onViewOrder, 
-  onReassign 
+  onReassign,
+  canResolve = true,
+  canReassign = true,
 }) => {
 
   if (loading) {
@@ -76,6 +80,8 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({
               onResolve={onResolve}
               onViewOrder={onViewOrder}
               onReassign={onReassign}
+              canResolve={canResolve}
+              canReassign={canReassign}
             />
           ))}
         </div>

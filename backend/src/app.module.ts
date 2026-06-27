@@ -23,7 +23,7 @@ import { RouteStop } from './routes/entities/route-stop.entity';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env.local' }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env.local', './.env', '.env'] }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -52,4 +52,4 @@ import { RouteStop } from './routes/entities/route-stop.entity';
     RoutesModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

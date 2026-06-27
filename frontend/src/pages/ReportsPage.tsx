@@ -4,9 +4,14 @@ import { StatsCard, LoadingSpinner } from '../components/common/StatsCard';
 import { DeliveryChart } from '../components/reports/DeliveryChart';
 import { ReportTable } from '../components/reports/ReportTable';
 import { reportsApi } from '../api/reports.api';
+import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 import toast from 'react-hot-toast';
 
 const ReportsPage: React.FC = () => {
+  const { user } = useAuth();
+  const { can } = usePermissions(user?.role);
+  const canExport = can('reports.export');
   const [kpis, setKpis] = useState<any>(null);
   const [deliveries, setDeliveries] = useState([]);
   const [topDrivers, setTopDrivers] = useState([]);
@@ -46,20 +51,24 @@ const ReportsPage: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Reportes y KPIs</h2>
         <div className="flex gap-3">
-          <button
-            onClick={() => handleExport('pdf')}
-            disabled={!!exporting}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg disabled:opacity-60"
-          >
-            {exporting === 'pdf' ? 'Exportando...' : '📄 Exportar PDF'}
-          </button>
-          <button
-            onClick={() => handleExport('excel')}
-            disabled={!!exporting}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg disabled:opacity-60"
-          >
-            {exporting === 'excel' ? 'Exportando...' : '📊 Exportar Excel'}
-          </button>
+          {canExport && (
+            <>
+              <button
+                onClick={() => handleExport('pdf')}
+                disabled={!!exporting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg disabled:opacity-60"
+              >
+                {exporting === 'pdf' ? 'Exportando...' : '📄 Exportar PDF'}
+              </button>
+              <button
+                onClick={() => handleExport('excel')}
+                disabled={!!exporting}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg disabled:opacity-60"
+              >
+                {exporting === 'excel' ? 'Exportando...' : '📊 Exportar Excel'}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
