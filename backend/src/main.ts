@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -35,7 +36,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 3001;
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT', 3001);
   await app.listen(port);
   logger.log(`Application running on port ${port}`);
   logger.log(`Swagger docs at http://localhost:${port}/api/docs`);
