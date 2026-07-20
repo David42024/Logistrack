@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import { KPICard } from '../components/dashboard/KPICard';
 import { AlertCenter } from '../components/dashboard/AlertCenter';
@@ -20,6 +21,7 @@ import {
 } from '../hooks/useDashboardData';
 
 const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<DashboardMode>(DashboardMode.ANALYTICS);
   const [selectedMetric, setSelectedMetric] = useState<MetricType>(MetricType.DELIVERIES);
   const { socket } = useSocket();
@@ -65,28 +67,25 @@ const DashboardPage: React.FC = () => {
     };
   }, [socket, operationalKPIs, performanceKPIs, incidents, orders, systemHealth, chartData]);
 
-  const handleResolveIncident = (id: string) => {
-    console.log('Resolve incident:', id);
-    incidents.refetch();
+  const handleResolveIncident = (incidentId: string) => {
+    const order = incidents.data?.find(i => i.id === incidentId);
+    if (order?.orderId) navigate(`/orders/${order.orderId}`);
   };
 
   const handleViewOrder = (id: string) => {
-    window.location.href = `/orders/${id}`;
+    navigate(`/orders/${id}`);
   };
 
   const handleReassignOrder = (id: string) => {
-    console.log('Reassign order:', id);
-    orders.refetch();
+    navigate(`/orders/${id}`);
   };
 
   const handleUpdateOrderStatus = (id: string) => {
-    console.log('Update order status:', id);
-    orders.refetch();
+    navigate(`/orders/${id}`);
   };
 
   const handleAssignDriver = (id: string) => {
-    console.log('Assign driver:', id);
-    orders.refetch();
+    navigate(`/orders/${id}`);
   };
 
   const handleMetricChange = (metric: MetricType) => {
@@ -180,6 +179,7 @@ const DashboardPage: React.FC = () => {
               onViewOrder={handleViewOrder}
               onUpdateStatus={handleUpdateOrderStatus}
               onAssignDriver={handleAssignDriver}
+              onCreateOrder={() => navigate('/orders/create')}
               showCreate={canCreateOrder}
               showUpdateStatus={canUpdateOrder}
               showAssignDriver={canAssignOrder}
@@ -197,6 +197,7 @@ const DashboardPage: React.FC = () => {
             onViewOrder={handleViewOrder}
             onUpdateStatus={handleUpdateOrderStatus}
             onAssignDriver={handleAssignDriver}
+            onCreateOrder={() => navigate('/orders/create')}
           />
         </div>
       )}

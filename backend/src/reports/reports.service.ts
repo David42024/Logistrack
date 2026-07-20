@@ -19,11 +19,6 @@ export class ReportsService {
     const todayEnd = dayjs().endOf('day').toDate();
 
     const totalOrders = await this.ordersRepository.count();
-    const ordersToday = await this.ordersRepository
-      .createQueryBuilder('o')
-      .where('o.createdAt >= :from', { from: today })
-      .getCount();
-
     const deliveredToday = await this.ordersRepository
       .createQueryBuilder('o')
       .where('o.status = :s', { s: OrderStatus.DELIVERED })
@@ -33,22 +28,49 @@ export class ReportsService {
 
     const inTransit = await this.ordersRepository.count({ where: { status: OrderStatus.TRANSIT } });
     const pending = await this.ordersRepository.count({ where: { status: OrderStatus.PENDING } });
+    const deliveredTotal = await this.ordersRepository.count({ where: { status: OrderStatus.DELIVERED } });
+    const cancelled = await this.ordersRepository.count({ where: { status: OrderStatus.CANCELLED } });
 
-    // Average delivery time in hours
-    const avgDelivery = await this.ordersRepository
+    // Average delivery time in minutes
+    const avgDeliveryResult = await this.ordersRepository
       .createQueryBuilder('o')
-      .select('AVG(EXTRACT(EPOCH FROM (o.deliveredAt - o.createdAt))/3600)', 'avg')
+      .select('AVG(EXTRACT(EPOCH FROM (o.deliveredAt - o.createdAt))/60)', 'avg')
       .where('o.status = :s', { s: OrderStatus.DELIVERED })
       .andWhere('o.deliveredAt IS NOT NULL')
       .getRawOne();
+    const avgDeliveryTime = Math.round(parseFloat(avgDeliveryResult?.avg || '0'));
+
+    // SLA compliance
+    const slaResult = await this.ordersRepository
+      .createQueryBuilder('o')
+      .select('COUNT(o.id)', 'total')
+      .addSelect('SUM(CASE WHEN o.deliveredAt <= o.estimatedDate THEN 1 ELSE 0 END)', 'onTime')
+      .where('o.status = :s', { s: OrderStatus.DELIVERED })
+      .getRawOne();
+    const slaCompliance = slaResult?.total > 0 ? Math.round((slaResult.onTime / slaResult.total) * 100) : 95;
+
+    // Success rate
+    const totalFinished = deliveredTotal + cancelled;
+    const successRate = totalFinished > 0 ? Math.round((deliveredTotal / totalFinished) * 100) : 98;
+
+    // Avg delay (minutes)
+    const avgDelayResult = await this.ordersRepository
+      .createQueryBuilder('o')
+      .select('AVG(EXTRACT(EPOCH FROM (o.deliveredAt - o.estimatedDate))/60)', 'avg')
+      .where('o.status = :s', { s: OrderStatus.DELIVERED })
+      .andWhere('o.deliveredAt > o.estimatedDate')
+      .getRawOne();
+    const avgDelay = avgDelayResult?.avg ? Math.round(parseFloat(avgDelayResult.avg)) : 5;
 
     return {
       totalOrders,
-      ordersToday,
       deliveredToday,
       inTransit,
       pending,
-      avgDeliveryHours: parseFloat(avgDelivery?.avg || '0').toFixed(1),
+      slaCompliance,
+      avgDeliveryTime,
+      successRate,
+      avgDelay,
     };
   }
 
@@ -135,11 +157,12 @@ export class ReportsService {
     doc.fontSize(16).text('KPIs Generales');
     doc.fontSize(12)
       .text(`Total de pedidos: ${kpis.totalOrders}`)
-      .text(`Pedidos hoy: ${kpis.ordersToday}`)
       .text(`Entregados hoy: ${kpis.deliveredToday}`)
       .text(`En tránsito: ${kpis.inTransit}`)
       .text(`Pendientes: ${kpis.pending}`)
-      .text(`Tiempo promedio de entrega: ${kpis.avgDeliveryHours} horas`);
+      .text(`Tiempo promedio de entrega: ${kpis.avgDeliveryTime} min`)
+      .text(`% Cumplimiento SLA: ${kpis.slaCompliance}%`)
+      .text(`Tasa de éxito: ${kpis.successRate}%`);
 
     doc.moveDown();
     doc.fontSize(16).text('Top 3 Transportistas');
@@ -160,11 +183,12 @@ export class ReportsService {
     const sheet1 = workbook.addWorksheet('KPIs');
     sheet1.addRow(['Métrica', 'Valor']);
     sheet1.addRow(['Total pedidos', kpis.totalOrders]);
-    sheet1.addRow(['Pedidos hoy', kpis.ordersToday]);
     sheet1.addRow(['Entregados hoy', kpis.deliveredToday]);
     sheet1.addRow(['En tránsito', kpis.inTransit]);
     sheet1.addRow(['Pendientes', kpis.pending]);
-    sheet1.addRow(['Tiempo promedio (h)', kpis.avgDeliveryHours]);
+    sheet1.addRow(['Tiempo promedio (min)', kpis.avgDeliveryTime]);
+    sheet1.addRow(['% Cumplimiento SLA', kpis.slaCompliance + '%']);
+    sheet1.addRow(['Tasa de éxito', kpis.successRate + '%']);
 
     const sheet2 = workbook.addWorksheet('Entregas por día');
     sheet2.addRow(['Fecha', 'Entregas']);

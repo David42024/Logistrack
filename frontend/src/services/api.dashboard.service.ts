@@ -146,13 +146,14 @@ export class DashboardService {
   async getOrders(params?: { status?: string; limit?: number }): Promise<Order[]> {
     try {
       const response = await this.api.get('/orders', { params });
-      return response.data.map((order: any) => ({
+      const ordersList = response.data.data || [];
+      return ordersList.map((order: any) => ({
         id: order.id,
         orderNumber: order.orderNumber,
         customer: order.customer?.name || 'N/A',
         status: order.status,
         driver: order.driver?.name || 'Sin asignar',
-        eta: this.formatETA(order.estimatedDelivery),
+        eta: this.formatETA(order.estimatedDate),
         priority: order.priority || 'medium',
       }));
     } catch (error) {

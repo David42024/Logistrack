@@ -8,7 +8,7 @@ import { driversApi } from '../api/drivers.api';
 import { fleetApi, Vehicle } from '../api/fleet.api';
 import { Customer, Order } from '../types/order.types';
 import { Driver } from '../types/driver.types';
-import { formatDate, formatDateTime } from '../utils/dateFormats';
+import { formatDate, formatDateTime, toDateInputValue } from '../utils/dateFormats';
 import { driverStatusColors, driverStatusLabels } from '../utils/statusColors';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
@@ -326,16 +326,26 @@ const FleetTab: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Vehicle | null>(null);
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
   const [form, setForm] = useState({
     plate: '', type: 'truck' as Vehicle['type'], model: '', year: new Date().getFullYear(),
     capacity: 0, status: 'active' as Vehicle['status'], insuranceExpiry: '', itvExpiry: '', mileage: 0,
   });
 
+  const totalPages = Math.max(1, Math.ceil(vehicles.length / perPage));
+  const paginatedVehicles = vehicles.slice((page - 1) * perPage, page * perPage);
+
   const fetchVehicles = async () => {
     setLoading(true);
-    try { const res = await fleetApi.getAll(); setVehicles(res.data); }
+    try { const res = await fleetApi.getAll(); setVehicles(res.data); setPage(1); }
     catch { toast.error('Error al cargar vehículos'); }
     finally { setLoading(false); }
+  };
+
+  const handlePerPageChange = (newPerPage: number) => {
+    setPerPage(newPerPage);
+    setPage(1);
   };
 
   useEffect(() => { fetchVehicles(); }, []);
@@ -363,7 +373,7 @@ const FleetTab: React.FC = () => {
     setEditing(v);
     setForm({
       plate: v.plate, type: v.type, model: v.model, year: v.year, capacity: v.capacity,
-      status: v.status, insuranceExpiry: v.insuranceExpiry || '', itvExpiry: v.itvExpiry || '', mileage: v.mileage || 0,
+      status: v.status, insuranceExpiry: toDateInputValue(v.insuranceExpiry), itvExpiry: toDateInputValue(v.itvExpiry), mileage: v.mileage || 0,
     });
     setShowForm(true);
   };
@@ -389,6 +399,8 @@ const FleetTab: React.FC = () => {
     { key: 'model', header: 'Modelo', render: (_, v) => <span className="text-sm">{v.model} ({v.year})</span> },
     { key: 'capacity', header: 'Capacidad', render: (_, v) => <span className="text-sm font-medium">{v.capacity} kg</span> },
     { key: 'mileage', header: 'Kilometraje', render: (_, v) => <span className="text-sm">{v.mileage ? `${v.mileage.toLocaleString()} km` : '-'}</span> },
+    { key: 'insuranceExpiry', header: 'Seguro', render: (_, v) => <span className="text-sm">{formatDate(v.insuranceExpiry)}</span> },
+    { key: 'itvExpiry', header: 'ITV', render: (_, v) => <span className="text-sm">{formatDate(v.itvExpiry)}</span> },
     { key: 'status', header: 'Estado', render: (_, v) =>
       canUpdateFleet ? (
         <select value={v.status} onChange={(e) => handleStatusChange(v.id, e.target.value)}
@@ -415,44 +427,66 @@ const FleetTab: React.FC = () => {
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Flota de Vehículos</h2>
           <p className="text-xs text-gray-500 dark:text-gray-400">Gestión completa de la flota comercial.</p>
         </div>
-        {(showForm || canCreateFleet) && (
-          <button onClick={() => { setEditing(null); setForm({ plate: '', type: 'truck', model: '', year: new Date().getFullYear(), capacity: 0, status: 'active', insuranceExpiry: '', itvExpiry: '', mileage: 0 }); setShowForm(!showForm); }}
+        {canCreateFleet && (
+          <button onClick={() => { setEditing(null); setForm({ plate: '', type: 'truck', model: '', year: new Date().getFullYear(), capacity: 0, status: 'active', insuranceExpiry: '', itvExpiry: '', mileage: 0 }); setShowForm(true); }}
             className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
-            {showForm ? 'Cerrar' : '+ Nuevo Vehículo'}
+            + Nuevo Vehículo
           </button>
         )}
       </div>
 
       {showForm && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <h3 className="mb-4 font-semibold text-gray-800 dark:text-gray-100">{editing ? 'Editar Vehículo' : 'Registrar Vehículo'}</h3>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Placa *</label><input required value={form.plate} onChange={(e) => setForm({ ...form, plate: e.target.value })} className={inputClass} placeholder="ABC-123" /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Tipo</label>
-              <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as Vehicle['type'] })} className={inputClass}>
-                <option value="truck">Camión</option><option value="van">Furgoneta</option><option value="motorcycle">Moto</option>
-              </select>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
+              <h3 className="font-bold text-gray-900 dark:text-gray-100">{editing ? 'Editar Vehículo' : 'Registrar Vehículo'}</h3>
+              <button onClick={() => { setShowForm(false); setEditing(null); }} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"><X size={20} /></button>
             </div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Modelo *</label><input required value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} className={inputClass} placeholder="Toyota Hiace" /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Año</label><input type="number" value={form.year} onChange={(e) => setForm({ ...form, year: Number(e.target.value) })} className={inputClass} /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Capacidad (kg)</label><input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: Number(e.target.value) })} className={inputClass} /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Kilometraje</label><input type="number" value={form.mileage} onChange={(e) => setForm({ ...form, mileage: Number(e.target.value) })} className={inputClass} /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Estado</label>
-              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Vehicle['status'] })} className={inputClass}>
-                <option value="active">Activo</option><option value="maintenance">Mantenimiento</option><option value="inactive">Inactivo</option>
-              </select>
-            </div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Vencimiento Seguro</label><input type="date" value={form.insuranceExpiry} onChange={(e) => setForm({ ...form, insuranceExpiry: e.target.value })} className={inputClass} /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Vencimiento ITV</label><input type="date" value={form.itvExpiry} onChange={(e) => setForm({ ...form, itvExpiry: e.target.value })} className={inputClass} /></div>
-            <div className="col-span-1 md:col-span-3 flex gap-3 mt-2">
-              <button type="button" onClick={() => { setShowForm(false); setEditing(null); }} className="flex-1 rounded-lg border border-gray-300 py-2 text-sm font-semibold hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">Cancelar</button>
-              <button type="submit" disabled={saving} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60">{saving ? 'Guardando...' : 'Guardar'}</button>
-            </div>
-          </form>
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 p-6 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Placa *</label><input required value={form.plate} onChange={(e) => setForm({ ...form, plate: e.target.value })} className={inputClass} placeholder="ABC-123" /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Tipo</label>
+                    <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as Vehicle['type'] })} className={inputClass}>
+                      <option value="truck">Camión</option><option value="van">Furgoneta</option><option value="motorcycle">Moto</option>
+                    </select>
+                  </div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Modelo *</label><input required value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} className={inputClass} placeholder="Toyota Hiace" /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Año</label><input type="number" value={form.year} onChange={(e) => setForm({ ...form, year: Number(e.target.value) })} className={inputClass} /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Capacidad (kg)</label><input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: Number(e.target.value) })} className={inputClass} /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Kilometraje</label><input type="number" value={form.mileage} onChange={(e) => setForm({ ...form, mileage: Number(e.target.value) })} className={inputClass} /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Estado</label>
+                    <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Vehicle['status'] })} className={inputClass}>
+                      <option value="active">Activo</option><option value="maintenance">Mantenimiento</option><option value="inactive">Inactivo</option>
+                    </select>
+                  </div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Vencimiento Seguro</label><input type="date" value={form.insuranceExpiry} onChange={(e) => setForm({ ...form, insuranceExpiry: e.target.value })} className={inputClass} /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Vencimiento ITV</label><input type="date" value={form.itvExpiry} onChange={(e) => setForm({ ...form, itvExpiry: e.target.value })} className={inputClass} /></div>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 flex gap-3 justify-end">
+                <button type="button" onClick={() => { setShowForm(false); setEditing(null); }} className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-semibold hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" disabled={saving} className="py-2 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60">{saving ? 'Guardando...' : 'Guardar'}</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      <CustomTable columns={columns} data={vehicles} loading={loading} emptyMessage="No hay vehículos registrados en la flota." />
+      <CustomTable
+        columns={columns}
+        data={paginatedVehicles}
+        loading={loading}
+        emptyMessage="No hay vehículos registrados en la flota."
+        pagination={{
+          currentPage: page,
+          totalPages,
+          onPageChange: setPage,
+          perPage,
+          perPageOptions: [10, 20, 50],
+          onPerPageChange: handlePerPageChange,
+        }}
+      />
     </div>
   );
 };

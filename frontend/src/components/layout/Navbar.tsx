@@ -2,7 +2,7 @@ import React from 'react';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
-import { Search, Bell, Sun, Moon, ChevronDown, Menu } from 'lucide-react';
+import { Bell, Sun, Moon, ChevronDown, Menu } from 'lucide-react';
 
 interface NavbarProps {
   title: string;
@@ -38,20 +38,7 @@ const Navbar: React.FC<NavbarProps> = ({
       {/* Title */}
       <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 flex-shrink-0">{title}</h2>
 
-      {/* Search bar - center */}
-      {showSearch && (
-        <div className="hidden md:block flex-1 px-4 max-w-md mx-auto">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              id="navbar-search"
-              type="text"
-              placeholder="Buscar pedidos, rutas..."
-              className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-9 pr-4 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400 transition-all"
-            />
-          </div>
-        </div>
-      )}
+
 
       {/* Right side */}
       <div className="flex items-center gap-3 ml-auto flex-shrink-0">

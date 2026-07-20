@@ -155,25 +155,22 @@ export class OrdersService {
   }
 
   async getStats() {
-    const today = dayjs().startOf('day').toDate();
-    const todayEnd = dayjs().endOf('day').toDate();
-
-    const [totalToday, deliveredToday, inTransit, incidents] = await Promise.all([
-      this.ordersRepository.count({ where: {} }),
-      this.ordersRepository
-        .createQueryBuilder('o')
-        .where('o.status = :s', { s: OrderStatus.DELIVERED })
-        .andWhere('o.deliveredAt >= :from', { from: today })
-        .andWhere('o.deliveredAt <= :to', { to: todayEnd })
-        .getCount(),
+    const [inRoute, pending, activeVehicles, activeIncidents, delayed] = await Promise.all([
       this.ordersRepository.count({ where: { status: OrderStatus.TRANSIT } }),
+      this.ordersRepository.count({ where: { status: OrderStatus.PENDING } }),
+      this.driversRepository.count({ where: { status: DriverStatus.AVAILABLE } }),
       this.historyRepository
         .createQueryBuilder('h')
         .where('h.incidentImage IS NOT NULL')
         .getCount(),
+      this.ordersRepository
+        .createQueryBuilder('o')
+        .where('o.status = :s', { s: OrderStatus.TRANSIT })
+        .andWhere('o.estimatedDate < :now', { now: new Date() })
+        .getCount(),
     ]);
 
-    return { totalToday, deliveredToday, inTransit, incidents };
+    return { inRoute, pending, activeVehicles, activeIncidents, delayed };
   }
 
   async addInciment(orderId: string, note: string, attachment?: string, userId?: string) {

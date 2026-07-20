@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { DataSource } from 'typeorm';
+import { DataSource, Like } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User } from './users/entities/user.entity';
 import { Driver, DriverStatus } from './drivers/entities/driver.entity';
@@ -378,6 +378,106 @@ export async function runSeed(dataSource: DataSource) {
         createdAt,
       });
       await historyRepo.save(history);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 6b. INCIDENCIAS — agregar incidentImage a algunos historiales
+  // ═══════════════════════════════════════════════════════════════════
+  const incidentDescriptions = [
+    'Cliente no se encontraba en domicilio',
+    'Mercadería dañada durante el traslado',
+    'Dirección incorrecta proporcionada por el cliente',
+    'Problemas con el pago contra entrega',
+    'Producto faltante en el pedido',
+    'Vehículo sufrió desperfecto mecánico en ruta',
+    'Cliente solicitó reprogramación de entrega',
+    'Documentación incompleta para la entrega',
+    'Zona de entrega bloqueada por manifestación',
+    'Inconvenientes con la descarga de mercadería',
+  ];
+
+  const historyWithIncident = await historyRepo.find({ take: 6, order: { createdAt: 'DESC' } });
+  for (let i = 0; i < historyWithIncident.length; i++) {
+    const h = historyWithIncident[i];
+    if (h.incidentImage) continue;
+    h.incidentImage = 'incident-seed-' + (i + 1) + '.jpg';
+    h.notes = incidentDescriptions[i % incidentDescriptions.length];
+    await historyRepo.save(h);
+    console.log(`  ✓ Incidencia añadida al historial: ${h.notes}`);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 6c. PEDIDOS ADICIONALES — datos de hoy para el dashboard
+  // ═══════════════════════════════════════════════════════════════════
+  const todayOrdersCount = await orderRepo.count({ where: { orderNumber: Like('ORD-' + now.toISOString().slice(0, 10).replace(/-/g, '') + '-%') } });
+  if (todayOrdersCount === 0) {
+    // 5 pedidos de hoy: 3 entregados, 1 en tránsito, 1 pendiente
+    const todayStatuses: OrderStatus[] = [
+      OrderStatus.DELIVERED, OrderStatus.DELIVERED, OrderStatus.DELIVERED,
+      OrderStatus.TRANSIT, OrderStatus.PENDING,
+    ];
+    for (let i = 0; i < 5; i++) {
+      const customer = customerRecords[i % customerRecords.length];
+      const status = todayStatuses[i];
+      const createdDate = new Date();
+      createdDate.setHours(createdDate.getHours() - Math.floor(Math.random() * 8) + 1); // hoy, en las últimas 8h
+
+      const estimatedDate = new Date(createdDate);
+      estimatedDate.setDate(estimatedDate.getDate() + 1);
+
+      let deliveredAt: Date | null = null;
+      if (status === OrderStatus.DELIVERED) {
+        deliveredAt = new Date();
+        deliveredAt.setHours(deliveredAt.getHours() - Math.floor(Math.random() * 3));
+      }
+
+      const driver = status === OrderStatus.DELIVERED || status === OrderStatus.TRANSIT
+        ? allDriverRecords[(30 + i) % allDriverRecords.length] : null;
+
+      const orderNumber = `ORD-${now.toISOString().slice(0, 10).replace(/-/g, '')}-${String(100 + i).padStart(4, '0')}`;
+
+      const order = orderRepo.create({
+        orderNumber,
+        customerId: customer.id,
+        driverId: driver?.id || null,
+        origin: origins[i % origins.length],
+        destination: destinations[i % destinations.length],
+        merchandiseType: merchandise[i % merchandise.length],
+        weight: Math.round((Math.random() * 5000 + 50) * 100) / 100,
+        status,
+        estimatedDate,
+        deliveredAt,
+        createdAt: createdDate,
+        updatedAt: createdDate,
+      });
+      const saved = await orderRepo.save(order);
+      orderRecords.push(saved);
+      console.log(`  ✓ Pedido hoy: ${orderNumber} (${status})`);
+
+      // Crear historial
+      const transitions: { prev: string | null; next: string; changedBy: string; notes: string }[] = [];
+      transitions.push({ prev: null, next: OrderStatus.PENDING, changedBy: 'Sistema', notes: 'Pedido registrado' });
+      if (status === OrderStatus.TRANSIT || status === OrderStatus.DELIVERED) {
+        transitions.push({ prev: OrderStatus.PENDING, next: OrderStatus.PREPARING, changedBy: 'Operador', notes: 'Preparado' });
+        transitions.push({ prev: OrderStatus.PREPARING, next: OrderStatus.TRANSIT, changedBy: 'Conductor', notes: 'En ruta' });
+      }
+      if (status === OrderStatus.DELIVERED) {
+        transitions.push({ prev: OrderStatus.TRANSIT, next: OrderStatus.DELIVERED, changedBy: 'Conductor', notes: 'Entregado sin incidencias' });
+      }
+
+      for (let t = 0; t < transitions.length; t++) {
+        const tr = transitions[t];
+        const h = historyRepo.create({
+          orderId: saved.id,
+          previousStatus: tr.prev,
+          newStatus: tr.next,
+          changedBy: tr.changedBy,
+          notes: tr.notes,
+          createdAt: new Date(createdDate.getTime() + t * 600000),
+        });
+        await historyRepo.save(h);
+      }
     }
   }
 

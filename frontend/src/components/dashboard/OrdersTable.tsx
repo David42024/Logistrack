@@ -7,6 +7,7 @@ interface OrdersTableProps {
   onViewOrder?: (id: string) => void;
   onUpdateStatus?: (id: string) => void;
   onAssignDriver?: (id: string) => void;
+  onCreateOrder?: () => void;
   showCreate?: boolean;
   showUpdateStatus?: boolean;
   showAssignDriver?: boolean;
@@ -18,6 +19,7 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
   onViewOrder, 
   onUpdateStatus, 
   onAssignDriver,
+  onCreateOrder,
   showCreate = true,
   showUpdateStatus = true,
   showAssignDriver = true,
@@ -85,7 +87,7 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Comienza creando tu primer pedido</p>
         {showCreate && (
           <button
-            onClick={() => window.location.href = '/orders/create'}
+            onClick={() => onCreateOrder?.()}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
           >
             Crear primer pedido

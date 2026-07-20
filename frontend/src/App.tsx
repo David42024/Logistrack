@@ -16,6 +16,9 @@ import DriverDashboardPage from './pages/DriverDashboardPage';
 import TrackOrderPage from './pages/TrackOrderPage';
 import ReportsPage from './pages/ReportsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import OrdersPage from './pages/OrdersPage';
+import CreateOrderPage from './pages/CreateOrderPage';
+import OrderDetailPage from './pages/OrderDetailPage';
 
 const App: React.FC = () => (
   <ThemeProvider>
@@ -57,6 +60,23 @@ const App: React.FC = () => (
             <Route path="/administracion" element={
               <ProtectedRoute roles={['admin']}>
                 <AdministracionPage />
+              </ProtectedRoute>
+            } />
+
+            {/* Orders */}
+            <Route path="/orders" element={
+              <ProtectedRoute roles={['admin', 'coordinator']}>
+                <OrdersPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/orders/create" element={
+              <ProtectedRoute roles={['admin', 'coordinator']}>
+                <CreateOrderPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/orders/:id" element={
+              <ProtectedRoute roles={['admin', 'coordinator', 'driver']}>
+                <OrderDetailPage />
               </ProtectedRoute>
             } />
 

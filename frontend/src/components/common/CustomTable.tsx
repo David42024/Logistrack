@@ -15,6 +15,9 @@ export interface CustomTableProps<T> {
     currentPage: number;
     totalPages: number;
     onPageChange: (page: number) => void;
+    perPage?: number;
+    perPageOptions?: number[];
+    onPerPageChange?: (perPage: number) => void;
   };
   onRowClick?: (row: T) => void;
   emptyMessage?: string;
@@ -126,8 +129,24 @@ const CustomTable = <T extends Record<string, any>>({
 
       {pagination && !loading && data.length > 0 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Página {pagination.currentPage} de {pagination.totalPages}
+          <div className="flex items-center gap-3">
+            {pagination.onPerPageChange && pagination.perPageOptions && (
+              <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                <span>Mostrar</span>
+                <select
+                  value={pagination.perPage}
+                  onChange={(e) => pagination.onPerPageChange?.(Number(e.target.value))}
+                  className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-2 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {pagination.perPageOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Página {pagination.currentPage} de {pagination.totalPages}
+            </span>
           </div>
           <div className="flex gap-2">
             <button
