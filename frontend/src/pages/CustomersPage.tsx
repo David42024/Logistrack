@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import MainLayout from '../components/layout/MainLayout';
 import CustomTable, { Column } from '../components/common/CustomTable';
 import { customersApi } from '../api/customers.api';
@@ -6,17 +6,116 @@ import { Customer, Order } from '../types/order.types';
 import OrderStatusBadge from '../components/orders/OrderStatusBadge';
 import { formatDate } from '../utils/dateFormats';
 import toast from 'react-hot-toast';
-import { X, Search, User, Mail, Phone, MapPin, Eye, FileText, Award } from 'lucide-react';
+import {
+  X,
+  Search,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  FileText,
+  Award,
+  Users,
+  PlusCircle,
+  Pencil,
+  Package,
+  Star,
+  TrendingUp,
+  Building2,
+  ChevronRight,
+} from 'lucide-react';
 
+/* ─────────── Customer tier helper ─────────── */
+const getCustomerTier = (orderCount: number) => {
+  if (orderCount >= 10)
+    return {
+      label: 'Corporativo',
+      sublabel: 'Alto volumen',
+      icon: <Building2 size={12} />,
+      color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300',
+      dot: 'bg-indigo-500',
+    };
+  if (orderCount >= 5)
+    return {
+      label: 'Frecuente',
+      sublabel: 'Volumen medio',
+      icon: <Star size={12} />,
+      color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+      dot: 'bg-emerald-500',
+    };
+  return {
+    label: 'Estándar',
+    sublabel: 'Bajo volumen',
+    icon: <User size={12} />,
+    color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+    dot: 'bg-gray-400',
+  };
+};
+
+/* ─────────── Avatar helper ─────────── */
+const AVATAR_COLORS = [
+  'from-blue-500 to-indigo-600',
+  'from-emerald-500 to-teal-600',
+  'from-violet-500 to-purple-600',
+  'from-amber-500 to-orange-500',
+  'from-rose-500 to-pink-600',
+  'from-cyan-500 to-sky-600',
+];
+
+const getAvatarGradient = (name: string) => {
+  const idx = name.charCodeAt(0) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[idx];
+};
+
+/* ─────────── Drawer component ─────────── */
+interface DrawerProps {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}
+
+const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children }) => (
+  <>
+    {/* Backdrop */}
+    <div
+      className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+        open ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
+      onClick={onClose}
+    />
+    {/* Panel */}
+    <div
+      className={`fixed inset-y-0 right-0 z-50 w-full max-w-md flex flex-col bg-white dark:bg-gray-900 shadow-2xl border-l border-gray-200 dark:border-gray-800 transition-transform duration-300 ease-out ${
+        open ? 'translate-x-0' : 'translate-x-full'
+      }`}
+    >
+      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-800">
+        <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">{title}</h2>
+        <button
+          onClick={onClose}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <X size={18} />
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto">{children}</div>
+    </div>
+  </>
+);
+
+/* ─────────── Main component ─────────── */
 const CustomersPage: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [showForm, setShowForm] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const searchDebounce = useRef<ReturnType<typeof setTimeout>>();
 
   const [form, setForm] = useState({
     name: '',
@@ -38,9 +137,26 @@ const CustomersPage: React.FC = () => {
     }
   }, [search]);
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
+
+  const handleSearchChange = (val: string) => {
+    setSearchInput(val);
+    clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(() => setSearch(val), 350);
+  };
+
+  const openCreateDrawer = () => {
+    setEditingCustomer(null);
+    setForm({ name: '', email: '', phone: '', address: '' });
+    setDrawerOpen(true);
+  };
+
+  const openEditDrawer = (cust: Customer, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingCustomer(cust);
+    setForm({ name: cust.name, email: cust.email, phone: cust.phone || '', address: cust.address || '' });
+    setDrawerOpen(true);
+  };
 
   const handleCreateOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,39 +168,27 @@ const CustomersPage: React.FC = () => {
     try {
       if (editingCustomer) {
         await customersApi.update(editingCustomer.id, form);
-        toast.success('Cliente actualizado correctamente');
+        toast.success('Cliente actualizado');
       } else {
         await customersApi.create(form);
-        toast.success('Cliente creado correctamente');
+        toast.success('Cliente registrado');
       }
-      setShowForm(false);
+      setDrawerOpen(false);
       setEditingCustomer(null);
       setForm({ name: '', email: '', phone: '', address: '' });
       fetchCustomers();
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Error al guardar cliente';
-      toast.error(errorMsg);
+      toast.error(err.response?.data?.message || 'Error al guardar cliente');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleEditClick = (cust: Customer, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingCustomer(cust);
-    setForm({
-      name: cust.name,
-      email: cust.email,
-      phone: cust.phone || '',
-      address: cust.address || '',
-    });
-    setShowForm(true);
-  };
-
-  const handleViewOrdersClick = async (cust: Customer, e: React.MouseEvent) => {
+  const handleViewOrders = async (cust: Customer, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedCustomer(cust);
     setLoadingOrders(true);
+    setCustomerOrders([]);
     try {
       const res = await customersApi.getOrders(cust.id);
       setCustomerOrders(res.data);
@@ -95,25 +199,21 @@ const CustomersPage: React.FC = () => {
     }
   };
 
-  // Classify volume / customer type
-  const getCustomerTier = (orderCount: number) => {
-    if (orderCount >= 10) return { label: 'Corporativo (Alto)', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300' };
-    if (orderCount >= 5) return { label: 'Frecuente (Medio)', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' };
-    return { label: 'Estándar', color: 'bg-gray-100 text-gray-800 dark:bg-gray-850 dark:text-gray-300' };
-  };
-
+  /* ── Table columns ── */
   const columns: Column<Customer>[] = [
     {
       key: 'name',
-      header: 'Nombre / Razón Social',
+      header: 'Cliente',
       render: (_, cust) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className={`w-9 h-9 rounded-xl bg-gradient-to-br ${getAvatarGradient(cust.name)} flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm`}
+          >
             {cust.name.charAt(0).toUpperCase()}
           </div>
-          <div>
-            <p className="font-semibold text-gray-800 dark:text-gray-100">{cust.name}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500">ID: {cust.id.substring(0, 8)}...</p>
+          <div className="min-w-0">
+            <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">{cust.name}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 truncate font-mono">#{cust.id.substring(0, 8)}</p>
           </div>
         </div>
       ),
@@ -122,14 +222,14 @@ const CustomersPage: React.FC = () => {
       key: 'email',
       header: 'Contacto',
       render: (_, cust) => (
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300">
-            <Mail size={12} className="text-gray-400" />
-            <span>{cust.email}</span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-200">
+            <Mail size={12} className="text-blue-400 flex-shrink-0" />
+            <span className="truncate max-w-[180px]">{cust.email}</span>
           </div>
           {cust.phone && (
             <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-              <Phone size={12} className="text-gray-400" />
+              <Phone size={12} className="text-gray-400 flex-shrink-0" />
               <span>{cust.phone}</span>
             </div>
           )}
@@ -140,9 +240,11 @@ const CustomersPage: React.FC = () => {
       key: 'address',
       header: 'Dirección',
       render: (_, cust) => (
-        <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 max-w-xs truncate">
+        <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 max-w-[200px]">
           <MapPin size={12} className="text-gray-400 flex-shrink-0" />
-          <span className="truncate">{cust.address || <span className="text-gray-400 italic">No especificada</span>}</span>
+          <span className="truncate">
+            {cust.address || <span className="text-gray-400 italic">No especificada</span>}
+          </span>
         </div>
       ),
     },
@@ -150,18 +252,19 @@ const CustomersPage: React.FC = () => {
       key: 'actions',
       header: 'Acciones',
       render: (_, cust) => (
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <button
-            onClick={(e) => handleViewOrdersClick(cust, e)}
-            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-sky-400 dark:hover:text-sky-300 font-semibold"
+            onClick={(e) => handleViewOrders(cust, e)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 px-2.5 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all"
           >
-            <FileText size={14} />
-            <span>Historial</span>
+            <FileText size={13} />
+            Historial
           </button>
           <button
-            onClick={(e) => handleEditClick(cust, e)}
-            className="text-xs text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 font-semibold ml-2"
+            onClick={(e) => openEditDrawer(cust, e)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
           >
+            <Pencil size={13} />
             Editar
           </button>
         </div>
@@ -174,17 +277,15 @@ const CustomersPage: React.FC = () => {
       key: 'orderNumber',
       header: 'N° Pedido',
       render: (_, order) => (
-        <span className="font-mono font-bold text-blue-600 dark:text-sky-300">
-          {order.orderNumber}
-        </span>
+        <span className="font-mono font-bold text-blue-600 dark:text-sky-400 text-xs">{order.orderNumber}</span>
       ),
     },
     {
       key: 'route',
       header: 'Ruta',
       render: (_, order) => (
-        <span className="text-xs">
-          {order.origin} → {order.destination}
+        <span className="text-xs text-gray-600 dark:text-gray-300">
+          {order.origin} <span className="text-gray-400">→</span> {order.destination}
         </span>
       ),
     },
@@ -196,194 +297,287 @@ const CustomersPage: React.FC = () => {
     {
       key: 'createdAt',
       header: 'Fecha',
-      render: (_, order) => <span className="text-xs">{formatDate(order.createdAt)}</span>,
+      render: (_, order) => <span className="text-xs text-gray-500">{formatDate(order.createdAt)}</span>,
     },
   ];
 
+  /* ── Input styles ── */
   const inputClass =
-    'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100';
+    'w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all';
+
+  const labelClass = 'block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5';
 
   return (
     <MainLayout title="Clientes">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Gestión de Clientes</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Directorio de clientes y registro de volumen comercial.</p>
+      {/* ── Page header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet-600/10 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400">
+            <Users size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Gestión de Clientes</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {customers.length} cliente{customers.length !== 1 ? 's' : ''} registrado{customers.length !== 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
         <button
-          onClick={() => {
-            setEditingCustomer(null);
-            setForm({ name: '', email: '', phone: '', address: '' });
-            setShowForm(!showForm);
-          }}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+          onClick={openCreateDrawer}
+          className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all shadow-sm shadow-violet-600/20"
         >
-          {showForm ? 'Cerrar Formulario' : '+ Nuevo Cliente'}
+          <PlusCircle size={16} />
+          Nuevo Cliente
         </button>
       </div>
 
-      {showForm && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <h3 className="mb-4 font-semibold text-gray-800 dark:text-gray-100">
-            {editingCustomer ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}
-          </h3>
-          <form onSubmit={handleCreateOrUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Nombre / Razón Social *</label>
-              <input
-                required
-                type="text"
-                placeholder="Ej. Distribuidora del Norte"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className={inputClass}
-              />
+      {/* ── Summary cards ── */}
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        {[
+          {
+            label: 'Total Clientes',
+            value: customers.length,
+            icon: <Users size={14} />,
+            color: 'text-violet-600 dark:text-violet-400',
+            bg: 'bg-violet-50 dark:bg-violet-950/30',
+          },
+          {
+            label: 'Corporativos',
+            value: '—',
+            icon: <Building2 size={14} />,
+            color: 'text-indigo-600 dark:text-indigo-400',
+            bg: 'bg-indigo-50 dark:bg-indigo-950/30',
+          },
+          {
+            label: 'Frecuentes',
+            value: '—',
+            icon: <TrendingUp size={14} />,
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+          },
+        ].map((card) => (
+          <div
+            key={card.label}
+            className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 flex items-center gap-3"
+          >
+            <div className={`w-8 h-8 rounded-lg ${card.bg} ${card.color} flex items-center justify-center flex-shrink-0`}>
+              {card.icon}
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Correo Electrónico *</label>
-              <input
-                required
-                type="email"
-                placeholder="Ej. contacto@cliente.com"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className={inputClass}
-              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">{card.label}</p>
+              <p className={`text-lg font-black ${card.color}`}>{card.value}</p>
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Teléfono de Contacto</label>
-              <input
-                type="text"
-                placeholder="Ej. +51 987 654 321"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Dirección Fiscal / Entrega</label>
-              <input
-                type="text"
-                placeholder="Ej. Av. Industrial 456, Trujillo"
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                className={inputClass}
-              />
-            </div>
-            <div className="col-span-1 md:col-span-2 flex gap-3 mt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingCustomer(null);
-                }}
-                className="flex-1 rounded-lg border border-gray-300 py-2 text-sm font-semibold hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60 transition-colors"
-              >
-                {saving ? 'Guardando...' : 'Guardar Cliente'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
 
-      {/* Filter and Search */}
-      <div className="mb-4 flex items-center relative max-w-md">
-        <Search size={18} className="absolute left-3 text-gray-400" />
+      {/* ── Search bar ── */}
+      <div className="mb-4 relative max-w-md">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
-          placeholder="Buscar por nombre o correo..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-200"
+          placeholder="Buscar por nombre o correo electrónico..."
+          value={searchInput}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all shadow-sm"
         />
       </div>
 
-      {/* Main Table */}
-      <CustomTable
-        columns={columns}
-        data={customers}
-        loading={loading}
-        emptyMessage="No se encontraron clientes registrados."
-      />
+      {/* ── Table ── */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+        <CustomTable
+          columns={columns}
+          data={customers}
+          loading={loading}
+          emptyMessage="No se encontraron clientes. Registra el primero con el botón de arriba."
+        />
+      </div>
 
-      {/* Order History Modal */}
+      {/* ── Create / Edit Drawer ── */}
+      <Drawer
+        open={drawerOpen}
+        onClose={() => { setDrawerOpen(false); setEditingCustomer(null); }}
+        title={editingCustomer ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}
+      >
+        <form onSubmit={handleCreateOrUpdate} className="p-6 space-y-5">
+          {/* Avatar preview */}
+          {form.name && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+              <div
+                className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getAvatarGradient(form.name)} flex items-center justify-center text-white font-bold text-sm shadow-sm`}
+              >
+                {form.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{form.name}</p>
+                <p className="text-xs text-gray-400">{editingCustomer ? 'Editando cliente existente' : 'Nuevo cliente'}</p>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className={labelClass}>Nombre / Razón Social *</label>
+            <input
+              required
+              type="text"
+              placeholder="Ej. Distribuidora del Norte"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>Correo Electrónico *</label>
+            <div className="relative">
+              <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                required
+                type="email"
+                placeholder="contacto@empresa.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className={`${inputClass} pl-9`}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Teléfono de Contacto</label>
+            <div className="relative">
+              <Phone size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="+51 987 654 321"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className={`${inputClass} pl-9`}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Dirección Fiscal / Entrega</label>
+            <div className="relative">
+              <MapPin size={15} className="absolute left-3 top-3 text-gray-400" />
+              <textarea
+                rows={2}
+                placeholder="Av. Industrial 456, Lima"
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                className={`${inputClass} pl-9 resize-none`}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => { setDrawerOpen(false); setEditingCustomer(null); }}
+              className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold disabled:opacity-60 transition-all shadow-sm shadow-violet-600/20"
+            >
+              {saving ? 'Guardando...' : editingCustomer ? 'Actualizar Cliente' : 'Registrar Cliente'}
+            </button>
+          </div>
+        </form>
+      </Drawer>
+
+      {/* ── Order History Modal ── */}
       {selectedCustomer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-850">
-              <div className="flex items-center gap-2">
-                <User className="text-blue-600 dark:text-blue-400" size={20} />
+          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-3xl w-full max-h-[88vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-11 h-11 rounded-xl bg-gradient-to-br ${getAvatarGradient(selectedCustomer.name)} flex items-center justify-center text-white font-bold text-base shadow-sm`}
+                >
+                  {selectedCustomer.name.charAt(0).toUpperCase()}
+                </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 dark:text-gray-100">{selectedCustomer.name}</h3>
+                  <h3 className="font-bold text-gray-900 dark:text-gray-100 text-base">{selectedCustomer.name}</h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{selectedCustomer.email}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedCustomer(null)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            {/* Modal Content */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-6">
-              {/* Stats & Classification */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-gray-50 dark:bg-gray-850 p-4 rounded-xl border border-gray-200/60 dark:border-gray-800 flex flex-col items-center text-center">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Pedidos</span>
-                  <span className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                    {loadingOrders ? '...' : customerOrders.length}
-                  </span>
-                </div>
-                <div className="bg-gray-50 dark:bg-gray-850 p-4 rounded-xl border border-gray-200/60 dark:border-gray-800 flex flex-col items-center text-center">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">Clasificación</span>
-                  {loadingOrders ? (
-                    <span className="text-sm font-medium">Cargando...</span>
-                  ) : (
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getCustomerTier(customerOrders.length).color}`}>
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-px bg-gray-100 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-800">
+              {[
+                {
+                  label: 'Total Pedidos',
+                  value: loadingOrders ? '—' : customerOrders.length,
+                  icon: <Package size={14} />,
+                  color: 'text-blue-600 dark:text-blue-400',
+                },
+                {
+                  label: 'Clasificación',
+                  value: loadingOrders ? '—' : (
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getCustomerTier(customerOrders.length).color}`}>
                       {getCustomerTier(customerOrders.length).label}
                     </span>
-                  )}
+                  ),
+                  icon: <Award size={14} />,
+                  color: 'text-amber-500',
+                },
+                {
+                  label: 'Carga Total',
+                  value: loadingOrders
+                    ? '—'
+                    : `${customerOrders.reduce((s, o) => s + (o.weight || 0), 0).toFixed(1)} kg`,
+                  icon: <TrendingUp size={14} />,
+                  color: 'text-emerald-600 dark:text-emerald-400',
+                },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-white dark:bg-gray-900 px-5 py-4 flex items-center gap-3">
+                  <span className={stat.color}>{stat.icon}</span>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
+                    <div className="text-base font-bold text-gray-900 dark:text-gray-100">{stat.value}</div>
+                  </div>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-850 p-4 rounded-xl border border-gray-200/60 dark:border-gray-800 flex flex-col items-center text-center">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Carga</span>
-                  <span className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                    {loadingOrders
-                      ? '...'
-                      : `${customerOrders.reduce((sum, ord) => sum + (ord.weight || 0), 0).toFixed(1)} kg`}
-                  </span>
-                </div>
-              </div>
-
-              {/* Table of Orders */}
-              <div>
-                <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
-                  <Award size={16} className="text-amber-500" />
-                  <span>Historial Consolidado de Despachos</span>
-                </h4>
-                <CustomTable
-                  columns={orderHistoryColumns}
-                  data={customerOrders}
-                  loading={loadingOrders}
-                  emptyMessage="Este cliente aún no tiene pedidos registrados."
-                />
-              </div>
+              ))}
             </div>
 
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-850 flex justify-end">
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <FileText size={15} className="text-blue-500" />
+                <h4 className="font-semibold text-gray-700 dark:text-gray-300 text-sm">Historial Consolidado de Despachos</h4>
+              </div>
+              <CustomTable
+                columns={orderHistoryColumns}
+                data={customerOrders}
+                loading={loadingOrders}
+                emptyMessage="Este cliente aún no tiene pedidos registrados."
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+              <button
+                onClick={(e) => { setSelectedCustomer(null); openEditDrawer(selectedCustomer, e); }}
+                className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+              >
+                <Pencil size={14} />
+                Editar cliente
+              </button>
               <button
                 onClick={() => setSelectedCustomer(null)}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors"
+                className="bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors"
               >
                 Cerrar
               </button>
