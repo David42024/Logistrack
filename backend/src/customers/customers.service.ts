@@ -13,13 +13,19 @@ export class CustomersService {
     private ordersRepository: Repository<Order>,
   ) {}
 
-  async findAll(search?: string) {
-    if (search) {
-      return this.customersRepository.find({
-        where: [{ name: Like(`%${search}%`) }, { email: Like(`%${search}%`) }],
-      });
-    }
-    return this.customersRepository.find();
+  async findAll(page = 1, limit = 10, search?: string) {
+    const where: any = search
+      ? [{ name: Like(`%${search}%`) }, { email: Like(`%${search}%`) }]
+      : undefined;
+
+    const [data, total] = await this.customersRepository.findAndCount({
+      where,
+      order: { name: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string) {

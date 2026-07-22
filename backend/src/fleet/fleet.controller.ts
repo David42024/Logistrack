@@ -16,13 +16,6 @@ export class FleetController {
     return this.fleetService.getAllVehicles();
   }
 
-  @Get('vehicles/:id')
-  @ApiOperation({ summary: 'Obtener un vehículo por ID' })
-  @ApiResponse({ status: 200, type: Vehicle })
-  getVehicleById(@Param('id') id: string) {
-    return this.fleetService.getVehicleById(id);
-  }
-
   @Get('vehicles/active')
   @ApiOperation({ summary: 'Obtener vehículos activos' })
   @ApiResponse({ status: 200, type: [Vehicle] })
@@ -35,6 +28,13 @@ export class FleetController {
   @ApiResponse({ status: 200, type: [Vehicle] })
   getVehiclesInMaintenance() {
     return this.fleetService.getVehiclesInMaintenance();
+  }
+
+  @Get('vehicles/:id')
+  @ApiOperation({ summary: 'Obtener un vehículo por ID' })
+  @ApiResponse({ status: 200, type: Vehicle })
+  getVehicleById(@Param('id') id: string) {
+    return this.fleetService.getVehicleById(id);
   }
 
   @Get('vehicles/:id/maintenance')

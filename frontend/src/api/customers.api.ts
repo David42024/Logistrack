@@ -1,7 +1,7 @@
 import api from './axios.config';
 
 export const customersApi = {
-  getAll: (params?: { search?: string }) =>
+  getAll: (params?: { page?: number; limit?: number; search?: string }) =>
     api.get('/customers', { params }),
 
   getOne: (id: string) => api.get(`/customers/${id}`),

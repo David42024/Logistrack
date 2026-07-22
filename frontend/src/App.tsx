@@ -16,7 +16,6 @@ import DriverDashboardPage from './pages/DriverDashboardPage';
 import TrackOrderPage from './pages/TrackOrderPage';
 import ReportsPage from './pages/ReportsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import OrdersPage from './pages/OrdersPage';
 import CreateOrderPage from './pages/CreateOrderPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 
@@ -64,11 +63,7 @@ const App: React.FC = () => (
             } />
 
             {/* Orders */}
-            <Route path="/orders" element={
-              <ProtectedRoute roles={['admin', 'coordinator']}>
-                <OrdersPage />
-              </ProtectedRoute>
-            } />
+            <Route path="/orders" element={<Navigate to="/logistica" replace />} />
             <Route path="/orders/create" element={
               <ProtectedRoute roles={['admin', 'coordinator']}>
                 <CreateOrderPage />

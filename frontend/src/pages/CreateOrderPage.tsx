@@ -128,7 +128,7 @@ const CreateOrderPage: React.FC = () => {
         {/* ── Header ── */}
         <div className="flex items-center gap-3 mb-6">
           <button
-            onClick={() => navigate('/orders')}
+            onClick={() => navigate('/logistica')}
             className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <ArrowLeft size={17} />
@@ -397,7 +397,7 @@ const CreateOrderPage: React.FC = () => {
           <div className="flex gap-3 pt-1 pb-8">
             <button
               type="button"
-              onClick={() => navigate('/orders')}
+              onClick={() => navigate('/logistica')}
               className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               Cancelar

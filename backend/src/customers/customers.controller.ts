@@ -15,8 +15,8 @@ export class CustomersController {
 
   @Get()
   @Roles(Role.ADMIN, Role.COORDINATOR)
-  findAll(@Query('search') search?: string) {
-    return this.customersService.findAll(search);
+  findAll(@Query('page') page = 1, @Query('limit') limit = 10, @Query('search') search?: string) {
+    return this.customersService.findAll(+page, +limit, search);
   }
 
   @Get(':id')

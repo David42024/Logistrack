@@ -11,10 +11,14 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async findAll() {
-    return this.usersRepository.find({
+  async findAll(page = 1, limit = 10) {
+    const [data, total] = await this.usersRepository.findAndCount({
       select: ['id', 'email', 'name', 'role', 'isActive', 'createdAt'],
+      order: { name: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string) {

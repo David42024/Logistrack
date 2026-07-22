@@ -9,6 +9,13 @@ import { RouteStop, StopStatus } from './entities/route-stop.entity';
 export class RoutesController {
   constructor(private readonly routesService: RoutesService) {}
 
+  @Get('metrics')
+  @ApiOperation({ summary: 'Obtener métricas de rutas' })
+  @ApiResponse({ status: 200, description: 'Métricas de rutas' })
+  getRouteMetrics() {
+    return this.routesService.getRouteMetrics();
+  }
+
   @Get()
   @ApiOperation({ summary: 'Obtener todas las rutas' })
   @ApiResponse({ status: 200, type: [Route] })
@@ -42,13 +49,6 @@ export class RoutesController {
   @ApiResponse({ status: 200, type: [Route] })
   getRoutesByStatus(@Param('status') status: RouteStatus) {
     return this.routesService.getRoutesByStatus(status);
-  }
-
-  @Get('metrics')
-  @ApiOperation({ summary: 'Obtener métricas de rutas' })
-  @ApiResponse({ status: 200, description: 'Métricas de rutas' })
-  getRouteMetrics() {
-    return this.routesService.getRouteMetrics();
   }
 
   @Post()

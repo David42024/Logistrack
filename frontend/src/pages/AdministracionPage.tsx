@@ -64,6 +64,8 @@ const UsersTab: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -72,10 +74,14 @@ const UsersTab: React.FC = () => {
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
-    try { const res = await usersApi.getAll(); setUsers(res.data); }
+    try {
+      const res = await usersApi.getAll({ page, limit: 10 });
+      setUsers(res.data.data);
+      setTotalPages(res.data.totalPages);
+    }
     catch { toast.error('Error al cargar usuarios'); }
     finally { setLoading(false); }
-  }, []);
+  }, [page]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -129,9 +135,9 @@ const UsersTab: React.FC = () => {
     } catch { toast.error('Error al desactivar usuario'); }
   };
 
-  const filteredUsers = users.filter(
-    (u) => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredUsers = search
+    ? users.filter((u) => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
+    : users;
 
   const roleMap: Record<Role, { label: string; color: string }> = {
     admin: { label: 'Administrador', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/40' },
@@ -220,11 +226,12 @@ const UsersTab: React.FC = () => {
 
       <div className="mb-4 flex items-center relative max-w-md">
         <Search size={18} className="absolute left-3 text-gray-400" />
-        <input type="text" placeholder="Buscar usuario..." value={search} onChange={(e) => setSearch(e.target.value)}
+        <input type="text" placeholder="Buscar usuario..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-200" />
       </div>
 
-      <CustomTable columns={columns} data={filteredUsers} loading={loading} emptyMessage="No se encontraron usuarios." />
+      <CustomTable columns={columns} data={filteredUsers} loading={loading} emptyMessage="No se encontraron usuarios."
+        pagination={{ currentPage: page, totalPages, onPageChange: (p) => setPage(p) }} />
     </div>
   );
 };

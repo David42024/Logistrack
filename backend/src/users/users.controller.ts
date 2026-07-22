@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Delete, UseGuards, Body, Patch } from '@nestjs/common';
+import { Controller, Get, Param, Delete, UseGuards, Body, Patch, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
@@ -15,8 +15,8 @@ export class UsersController {
 
   @Get()
   @Roles(Role.ADMIN)
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query('page') page = 1, @Query('limit') limit = 10) {
+    return this.usersService.findAll(+page, +limit);
   }
 
   @Get(':id')

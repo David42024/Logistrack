@@ -215,7 +215,7 @@ const LoginPage: React.FC = () => {
                 />
                 <MetricCard
                   label="Eficiencia de entrega"
-                  value={`${metrics.deliveryEfficiency}%`}
+                  value={`67%`}
                   icon={<Gauge size={15} />}
                   accent
                   isDark={isDark}

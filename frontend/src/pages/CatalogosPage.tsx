@@ -62,6 +62,8 @@ const CustomersTab: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -72,10 +74,14 @@ const CustomersTab: React.FC = () => {
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
-    try { const res = await customersApi.getAll({ search }); setCustomers(res.data); }
+    try {
+      const res = await customersApi.getAll({ page, limit: 10, search });
+      setCustomers(res.data.data);
+      setTotalPages(res.data.totalPages);
+    }
     catch { toast.error('Error al cargar clientes'); }
     finally { setLoading(false); }
-  }, [search]);
+  }, [page, search]);
 
   useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
@@ -158,37 +164,47 @@ const CustomersTab: React.FC = () => {
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Gestión de Clientes</h2>
           <p className="text-xs text-gray-500 dark:text-gray-400">Directorio de clientes y registro de volumen comercial.</p>
         </div>
-        {(showForm || canCreateCustomer) && (
-          <button onClick={() => { setEditingCustomer(null); setForm({ name: '', email: '', phone: '', address: '' }); setShowForm(!showForm); }}
+        {canCreateCustomer && (
+          <button onClick={() => { setEditingCustomer(null); setForm({ name: '', email: '', phone: '', address: '' }); setShowForm(true); }}
             className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
-            {showForm ? 'Cerrar' : '+ Nuevo Cliente'}
+            + Nuevo Cliente
           </button>
         )}
       </div>
 
       {showForm && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <h3 className="mb-4 font-semibold text-gray-800 dark:text-gray-100">{editingCustomer ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}</h3>
-          <form onSubmit={handleCreateOrUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Nombre *</label><input required type="text" placeholder="Ej. Distribuidora del Norte" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Correo *</label><input required type="email" placeholder="Ej. contacto@cliente.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass} /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Teléfono</label><input type="text" placeholder="Ej. +51 987 654 321" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Dirección</label><input type="text" placeholder="Ej. Av. Industrial 456, Trujillo" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputClass} /></div>
-            <div className="col-span-1 md:col-span-2 flex gap-3 mt-2">
-              <button type="button" onClick={() => { setShowForm(false); setEditingCustomer(null); }} className="flex-1 rounded-lg border border-gray-300 py-2 text-sm font-semibold hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">Cancelar</button>
-              <button type="submit" disabled={saving} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60">{saving ? 'Guardando...' : 'Guardar Cliente'}</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
+              <h3 className="font-bold text-gray-900 dark:text-gray-100">{editingCustomer ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}</h3>
+              <button onClick={() => { setShowForm(false); setEditingCustomer(null); }} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"><X size={20} /></button>
             </div>
-          </form>
+            <form onSubmit={handleCreateOrUpdate} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 p-6 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Nombre *</label><input required type="text" placeholder="Ej. Distribuidora del Norte" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Correo *</label><input required type="email" placeholder="Ej. contacto@cliente.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass} /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Teléfono</label><input type="text" placeholder="Ej. +51 987 654 321" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Dirección</label><input type="text" placeholder="Ej. Av. Industrial 456, Trujillo" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputClass} /></div>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 flex gap-3 justify-end">
+                <button type="button" onClick={() => { setShowForm(false); setEditingCustomer(null); }} className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-semibold hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">Cancelar</button>
+                <button type="submit" disabled={saving} className="py-2 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60">{saving ? 'Guardando...' : editingCustomer ? 'Guardar Cambios' : 'Guardar Cliente'}</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
       <div className="mb-4 flex items-center relative max-w-md">
         <Search size={18} className="absolute left-3 text-gray-400" />
-        <input type="text" placeholder="Buscar por nombre o correo..." value={search} onChange={(e) => setSearch(e.target.value)}
+        <input type="text" placeholder="Buscar por nombre o correo..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-200" />
       </div>
 
-      <CustomTable columns={columns} data={customers} loading={loading} emptyMessage="No se encontraron clientes registrados." />
+      <CustomTable columns={columns} data={customers} loading={loading} emptyMessage="No se encontraron clientes registrados."
+        pagination={{ currentPage: page, totalPages, onPageChange: (p) => setPage(p) }} />
 
       {selectedCustomer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -238,17 +254,28 @@ const DriversTab: React.FC = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [form, setForm] = useState({ name: '', phone: '', vehicleType: '', vehiclePlate: '', licenseNumber: '' });
   const [saving, setSaving] = useState(false);
 
-  const fetchDrivers = async () => {
+  const fetchDrivers = async (p = page) => {
     setLoading(true);
-    try { const res = await driversApi.getAll(); setDrivers(res.data); }
+    try {
+      const res = await driversApi.getAll({ page: p, limit: 9 });
+      setDrivers(res.data.data);
+      setTotalPages(res.data.totalPages);
+    }
     catch { toast.error('Error al cargar transportistas'); }
     finally { setLoading(false); }
   };
 
   useEffect(() => { fetchDrivers(); }, []);
+
+  const handlePageChange = (p: number) => {
+    setPage(p);
+    fetchDrivers(p);
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -269,47 +296,73 @@ const DriversTab: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Transportistas</h2>
-        {(showForm || canCreateDriver) && <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">+ Nuevo Transportista</button>}
+        {canCreateDriver && <button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">+ Nuevo Transportista</button>}
       </div>
 
       {showForm && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 font-semibold text-gray-700 dark:text-gray-200">Registrar Transportista</h3>
-          <form onSubmit={handleCreate} className="grid grid-cols-2 gap-4">
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Nombre *</label><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Teléfono</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Tipo de Vehículo</label><input value={form.vehicleType} onChange={(e) => setForm({ ...form, vehicleType: e.target.value })} className={inputClass} placeholder="Camión, Furgón..." /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Placa</label><input value={form.vehiclePlate} onChange={(e) => setForm({ ...form, vehiclePlate: e.target.value })} className={inputClass} /></div>
-            <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">N° Licencia</label><input value={form.licenseNumber} onChange={(e) => setForm({ ...form, licenseNumber: e.target.value })} className={inputClass} /></div>
-            <div className="col-span-2 flex gap-3">
-              <button type="button" onClick={() => setShowForm(false)} className="flex-1 rounded-lg border border-gray-300 py-2 text-sm hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700">Cancelar</button>
-              <button type="submit" disabled={saving} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold disabled:opacity-60">{saving ? 'Guardando...' : 'Guardar'}</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
+              <h3 className="font-bold text-gray-900 dark:text-gray-100">Registrar Transportista</h3>
+              <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"><X size={20} /></button>
             </div>
-          </form>
+            <form onSubmit={handleCreate} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 p-6 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2"><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Nombre *</label><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} placeholder="Ej. Juan Pérez" /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Teléfono</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} placeholder="+51 999 888 777" /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Tipo de Vehículo</label><input value={form.vehicleType} onChange={(e) => setForm({ ...form, vehicleType: e.target.value })} className={inputClass} placeholder="Camión, Furgón..." /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Placa</label><input value={form.vehiclePlate} onChange={(e) => setForm({ ...form, vehiclePlate: e.target.value })} className={inputClass} placeholder="ABC-123" /></div>
+                  <div><label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">N° Licencia</label><input value={form.licenseNumber} onChange={(e) => setForm({ ...form, licenseNumber: e.target.value })} className={inputClass} /></div>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 flex gap-3 justify-end">
+                <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-semibold hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">Cancelar</button>
+                <button type="submit" disabled={saving} className="py-2 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60">{saving ? 'Guardando...' : 'Guardar'}</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
       {loading ? <LoadingSpinner size="lg" /> : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {drivers.map((d) => (
-            <div key={d.id} className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="font-bold text-gray-800 dark:text-gray-100">{d.name}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{d.vehicleType} · {d.vehiclePlate}</p>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {drivers.map((d) => (
+              <div key={d.id} className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="font-bold text-gray-800 dark:text-gray-100">{d.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{d.vehicleType} · {d.vehiclePlate}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${driverStatusColors[d.status] || ''}`}>
+                    {driverStatusLabels[d.status] || d.status}
+                  </span>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${driverStatusColors[d.status] || ''}`}>
-                  {driverStatusLabels[d.status] || d.status}
-                </span>
+                <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                  {d.phone && <p className="flex items-center gap-1.5"><Phone size={12} />{d.phone}</p>}
+                  {d.licenseNumber && <p className="flex items-center gap-1.5"><FileText size={12} />Lic. {d.licenseNumber}</p>}
+                </div>
               </div>
-              <div className="space-y-1 text-xs text-gray-400 dark:text-gray-500">
-                {d.phone && <p>📞 {d.phone}</p>}
-                {d.licenseNumber && <p>🪪 {d.licenseNumber}</p>}
-              </div>
+            ))}
+            {drivers.length === 0 && <div className="col-span-3 py-12 text-center text-gray-400">No hay transportistas registrados</div>}
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <button disabled={page <= 1} onClick={() => handlePageChange(page - 1)}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-semibold disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                Anterior
+              </button>
+              <span className="text-xs text-gray-500 dark:text-gray-400 px-3">
+                Página {page} de {totalPages}
+              </span>
+              <button disabled={page >= totalPages} onClick={() => handlePageChange(page + 1)}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-semibold disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                Siguiente
+              </button>
             </div>
-          ))}
-          {drivers.length === 0 && <div className="col-span-3 py-12 text-center text-gray-400">No hay transportistas registrados</div>}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

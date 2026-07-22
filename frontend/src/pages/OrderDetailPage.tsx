@@ -131,7 +131,7 @@ const OrderDetailPage: React.FC = () => {
       setOrder(res.data);
     } catch {
       toast.error('Pedido no encontrado');
-      navigate('/orders');
+      navigate('/logistica');
     } finally {
       setLoading(false);
     }
@@ -211,7 +211,7 @@ const OrderDetailPage: React.FC = () => {
         {/* ── Breadcrumb / back ── */}
         <div className="flex items-center gap-2 mb-6">
           <button
-            onClick={() => navigate('/orders')}
+            onClick={() => navigate('/logistica')}
             className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <ArrowLeft size={16} />
@@ -219,7 +219,7 @@ const OrderDetailPage: React.FC = () => {
           <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
             <span
               className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
-              onClick={() => navigate('/orders')}
+              onClick={() => navigate('/logistica')}
             >
               Pedidos
             </span>

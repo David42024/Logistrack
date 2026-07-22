@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import OrderTable from '../components/orders/OrderTable';
 import OrderFilters from '../components/orders/OrderFilters';
@@ -95,6 +96,7 @@ const OrdersTab: React.FC = () => {
   const { socket } = useSocket();
   const { can: hasPerm } = usePermissions(user?.role);
 
+  const navigate = useNavigate();
   const canCreateOrder = hasPerm('orders.create');
   const canAssignOrder = hasPerm('orders.assign');
   const canUpdateOrder = hasPerm('orders.update');
@@ -210,7 +212,7 @@ const OrdersTab: React.FC = () => {
           <div className="flex gap-2">
             {canCreateOrder && (
               <button
-                onClick={() => window.location.href = '/logistica?action=new'}
+                onClick={() => navigate('/orders/create')}
                 className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
               >
                 + Nuevo Pedido

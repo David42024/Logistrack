@@ -10,8 +10,14 @@ export class DriversService {
     private driversRepository: Repository<Driver>,
   ) {}
 
-  async findAll() {
-    return this.driversRepository.find({ relations: ['user'] });
+  async findAll(page = 1, limit = 10) {
+    const [data, total] = await this.driversRepository.findAndCount({
+      order: { name: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+      relations: ['user'],
+    });
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findAvailable() {
